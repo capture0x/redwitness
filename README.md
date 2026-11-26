@@ -20,16 +20,16 @@
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-Contributor%20Covenant-7b3fe4.svg)](CODE_OF_CONDUCT.md)
 
-[Quick start](#-quick-start-2-minutes) · [Why](#-why-aiveritx) · [Features](#-features) · [How it works](#-how-a-test-runs) · [Compare](#-where-aiveritx-fits) · [Security](#-security--architecture) · [Docs](#documentation) · [Contributing](#-contributing)
+[Quick start](#-quick-start-2-minutes) · [Why](#-why-aiveritx) · [Features](#-features) · [How it works](#-how-a-test-runs) · [Compare](#-where-aiveritx-fits) · [Security](#-security--architecture) · [Docs](#documentation) · [Contributing](#-contributing) · [Legal](#legal-disclaimer)
 
 </div>
 
+> [!WARNING]
+> **For legal and authorized use only.** AIVeritX is a security testing tool. Use it only against systems you own or have explicit written permission to test. Unauthorized testing may be illegal. The authors and contributors accept no liability for misuse or for any damage it causes. See [Legal disclaimer](#legal-disclaimer).
+
 ### 🎬 Demo
 
-> **A 10-second demo of a live scan goes here.**
-> *(Replace this placeholder with a 10-second screen recording of a live scan showing the Agent Live Stream, Attack Tree, and Findings)*
-
-<!-- When the file exists, replace the box above with: <img src="docs/demo.gif" alt="AIVeritX live scan demo" width="900"> -->
+<!-- A short screen recording can go here later: <img src="docs/demo.gif" alt="AIVeritX live scan demo" width="900"> -->
 
 ![Dashboard: metric cards, risk trend, live agent timeline, system health and model comparison](docs/screenshots/dashboard.png)
 
@@ -721,9 +721,18 @@ cd frontend && npm run typecheck && npm run build
 
 Keep the design rules: the engine holds no attack content (it lives in the library), safety controls stay in code, and every new path that reaches a target goes through the scope gate and the Governor. Add a test with every change.
 
-## ⚠️ Responsible use
+<a id="legal-disclaimer"></a>
 
-AIVeritX sends adversarial prompts to systems. Use it **only** against systems you own or are explicitly authorized to test. The signed-scope design makes that authorization explicit and auditable, but it does not replace permission from the system's owner. Report vulnerabilities you find through the owner's disclosure process.
+## ⚖️ Legal disclaimer and responsible use
+
+AIVeritX sends adversarial prompts to the systems it tests. **It is intended for legal, authorized security testing only.**
+
+- **Authorization is required.** Use AIVeritX only against systems you own or for which you have explicit, written permission from the owner. The signed scope records that authorization and makes it auditable, but it does not replace the owner's permission.
+- **You are responsible for compliance.** You must follow all laws and regulations that apply to you and to the target, your contracts, and the target's terms of service, including the usage policies of any AI provider whose models or APIs you test or use as a judge.
+- **No warranty, no liability.** The software is provided "as is", without warranty of any kind (see [`LICENSE`](LICENSE)). The authors and contributors are not liable for any damage, data loss, service disruption, costs (for example API usage fees) or legal consequences that result from using or misusing it.
+- **Disclose responsibly.** Report vulnerabilities you find to the system's owner through their disclosure process, and do not use findings to harm anyone.
+
+Using AIVeritX for unauthorized access, attacks on systems you do not have permission to test, or any other illegal purpose is strictly prohibited. This section is not legal advice.
 
 ## ⭐ Support
 
@@ -754,6 +763,3 @@ GNU Affero General Public License for more details.
 - **If you offer it as a service over a network (SaaS), you must offer the complete source code of the modified version to everyone who uses that service (§13).**
   This clause exists to prevent the project from being turned into a closed-source service.
 - As the copyright holder (if there is no other holder) you may also license your own code under other terms (e.g. commercial dual licensing).
-
-> **Before publishing:** verify yourself that the licenses of the dependencies
-> are suitable for distribution together with AGPL-3.0 (especially if you plan a commercial distribution); that verification has not been done here.
