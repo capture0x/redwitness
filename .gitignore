@@ -1,0 +1,19 @@
+frontend/node_modules/
+frontend/.next/
+backend/data/
+__pycache__/
+*.pyc
+backend/.venv/
+frontend/e2e-out/
+frontend/next-env.d.ts
+
+# Secrets: never enter version control (template: .env.example)
+.env
+.env.*
+!.env.example
+
+# Old (web/network based) work: stays local, not added to the repository
+_archive/
+
+frontend/tsconfig.tsbuildinfo
+.pytest_cache/

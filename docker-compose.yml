@@ -1,0 +1,89 @@
+# AIVeritX - the whole stack with one command:   ./install.sh        (asks for the judge key, then builds and starts everything)
+# Without the wizard:                              ./scripts/init-env.sh && docker compose up -d --build
+# UI: http://localhost:3000  (reachable from this machine only; the database and API are NOT exposed to the host)
+name: aiveritx
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aiveritx
+      POSTGRES_DB: aiveritx
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set - run ./scripts/init-env.sh}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiveritx -d aiveritx"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # ALL variables in .env are passed to the container: keys whose names are given as `api_key_env` in the scope/settings
+    # (ANTHROPIC_API_KEY, OPENAI_API_KEY, TARGET_API_KEY …) can therefore be used without being written to the database.
+    env_file: .env
+    environment:
+      AIVERITX_DATABASE_URL: postgresql://aiveritx:${POSTGRES_PASSWORD}@db:5432/aiveritx
+      AIVERITX_SCOPE_KEYS: ${AIVERITX_SCOPE_KEYS:?AIVERITX_SCOPE_KEYS is not set - run ./scripts/init-env.sh}
+      AIVERITX_ADMIN_PASSWORD: ${AIVERITX_ADMIN_PASSWORD:?AIVERITX_ADMIN_PASSWORD is not set - run ./scripts/init-env.sh}
+      # The UI proxies to the API under the name "backend"; the API's Host validation (DNS-rebinding protection) must know this name.
+      AIVERITX_ALLOWED_HOSTS: backend
+    volumes:
+      - sandbox_jobs:/sandbox-jobs      # small JSON job files for the optional sandbox runner (nothing else is shared)
+    expose:
+      - "8000"          # inside the compose network only; not published to the host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/api/auth/status >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # Optional sandbox verifier (Settings -> Sandbox verification). Start with: docker compose --profile sandbox up -d
+  # It analyses the target's own output (HTML, SQL) with NO network, a read-only filesystem and no capabilities; the backend gets no Docker socket.
+  sandbox-runner:
+    profiles: ["sandbox"]
+    build: ./runner
+    restart: unless-stopped
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    user: "65534:65534"
+    mem_limit: 512m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    environment:
+      RUNNER_JOBS: /jobs
+    volumes:
+      - sandbox_jobs:/jobs
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        AIVERITX_API: http://backend:8000
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${AIVERITX_PORT:-3000}:3000"   # loopback only; to open it to other machines use a reverse proxy + TLS
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+volumes:
+  pgdata:
+  sandbox_jobs:

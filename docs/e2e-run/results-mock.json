@@ -1,0 +1,697 @@
+{
+ "mode": "mock",
+ "total": 138,
+ "failed": 0,
+ "results": [
+  {
+   "name": "ISOLATION: no access to the outside network (https://example.com is unreachable)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the admin signed in with the bootstrap password and sees every menu item",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "OWASP matrix is empty at the start: 10 categories 'not tested', no score",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "users were created through the UI (admin, operator, viewer)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the judge setting points at the local fake judge",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "system status: the judge is ready",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the approval screen shows the digest, the endpoint and the limits",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the scope was signed and is valid",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer menu has no New Test / Audit / Users / Settings",
+   "ok": true,
+   "detail": "Dashboard|Targets|Findings|Test Library|Benchmarks|Defense Efficacy|AI Security Suite|Privacy & Extraction|Model Supply Chain|Logs|OWASP Compliance|Compliance Suite|Scopes"
+  },
+  {
+   "name": "the viewer sees 'no access' on the /new page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer sees the scope list but there is no 'New scope' button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer cannot start a test through the API (403 ACCESS_DENIED)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the test library was imported through the UI (11 cases)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the operator cannot sign a scope (403)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "run 1 completed",
+   "ok": true,
+   "detail": "completed/null"
+  },
+  {
+   "name": "finding sys-001: verified (high)",
+   "ok": true,
+   "detail": "verified/high"
+  },
+  {
+   "name": "finding dat-001: verified (high)",
+   "ok": true,
+   "detail": "verified/high"
+  },
+  {
+   "name": "finding multi-001: verified (high)",
+   "ok": true,
+   "detail": "verified/high"
+  },
+  {
+   "name": "finding ind-001: verified (high)",
+   "ok": true,
+   "detail": "verified/high"
+  },
+  {
+   "name": "finding ind-002: verified (high)",
+   "ok": true,
+   "detail": "verified/high"
+  },
+  {
+   "name": "finding tool-001: verified (critical)",
+   "ok": true,
+   "detail": "verified/critical"
+  },
+  {
+   "name": "flaky-001: unstable (could not be reproduced)",
+   "ok": true,
+   "detail": "unstable"
+  },
+  {
+   "name": "case sys-002: no finding",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "case jb-001: no finding",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "case rl-001: no finding",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "case dir-001: no finding",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7 findings in total (6 verified + 1 unstable)",
+   "ok": true,
+   "detail": "7"
+  },
+  {
+   "name": "indirect-test evidence: document name + SHA-256 recorded, the message contains the document",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ingest: documents were uploaded to the target AND deleted after every conversation (no document left on the target)",
+   "ok": true,
+   "detail": "{\"uploaded\":3,\"deleted\":3,\"left\":0}"
+  },
+  {
+   "name": "cleanup steps appear in the run record (cleaned)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "multi-turn test: leak on the 2nd turn, the history was passed to the target",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "tool-001: the target's tool call is in the evidence",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rl-001: continued with backoff after the 429 (no finding, run complete)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "jb-001: refusal → the next variant was tried",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "judge tokens were deducted from the budget",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "run 2 (streaming/SSE) completed and the target answered with a stream",
+   "ok": true,
+   "detail": "completed"
+  },
+  {
+   "name": "run 2: only the selected category ran, the leaks were verified",
+   "ok": true,
+   "detail": "sys-001,multi-001"
+  },
+  {
+   "name": "the streamed response was joined and went to the judge as full text",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "PDF report was generated (valid PDF, > 8 KB)",
+   "ok": true,
+   "detail": "45747 bytes"
+  },
+  {
+   "name": "PDF content: risk score, finding ids and library name are present",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "CSV report: header + 7 finding rows",
+   "ok": true,
+   "detail": "8"
+  },
+  {
+   "name": "scope limit: hard stop after 2 requests (REQUEST_LIMIT), the refusal was coded",
+   "ok": true,
+   "detail": "halted/REQUEST_LIMIT/2"
+  },
+  {
+   "name": "a finding that could not be verified because of the limit stayed 'candidate' (not counted as verified)",
+   "ok": true,
+   "detail": "candidate"
+  },
+  {
+   "name": "the viewer sees the 6 verified findings on the findings page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer can download the PDF report",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer cannot read the audit records (403)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "audit: unauthorized access (ACCESS_DENIED) and REQUEST_LIMIT are recorded with their codes",
+   "ok": true,
+   "detail": "ACCESS_DENIED,REQUEST_LIMIT"
+  },
+  {
+   "name": "the audit chain is intact",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dashboard: risk score critical, 8 verified findings, token usage > 0",
+   "ok": true,
+   "detail": "{\"r\":97,\"v\":8,\"t\":14062}"
+  },
+  {
+   "name": "judge advisory: local endpoint → 'warn' level and a reason",
+   "ok": true,
+   "detail": "[\"the judge runs on a local endpoint\"]"
+  },
+  {
+   "name": "Settings: the 'Judge model warning' + 'strongly recommended' text is shown",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "OWASP scope was signed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Ready-made templates: 10 template cards for LLM01…LLM10",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limited-coverage categories (LLM03/04/08) are marked",
+   "ok": true,
+   "detail": "3"
+  },
+  {
+   "name": "a single template was imported (LLM09)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the judge advisory is shown in the scan dialog",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dialog: 10 categories come preselected",
+   "ok": true,
+   "detail": "Scan 10 categories"
+  },
+  {
+   "name": "LLM06 (tool abuse is not in the scope) was skipped and the user was told",
+   "ok": true,
+   "detail": "OWASP LLM Top 10 scan\n\nRuns the starter kit's basic quality probes for the selected categories, inside your signed scope.\n\nScan started · 13 cases\nLLM01\nLLM02\nL"
+  },
+  {
+   "name": "while the run is going the categories are in the 'testing' state",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the OWASP run completed",
+   "ok": true,
+   "detail": "completed/null"
+  },
+  {
+   "name": "run configuration: 9 categories planned, LLM06 skipped",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "verified findings: llm01-direct, llm01-indirect, llm02-customers, llm07-plain",
+   "ok": true,
+   "detail": "llm01-direct,llm01-indirect,llm02-customers,llm07-plain"
+  },
+  {
+   "name": "findings are tagged with the right OWASP category (from the library)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the judge LLM also classified the OWASP category (suggestion recorded, no mismatch)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no findings for clean categories; LLM08 is inconclusive → not a finding, 'review' in the matrix",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "matrix statuses: 4 vulnerable, 1 review, 5 clean",
+   "ok": true,
+   "detail": "{\"LLM01\":\"vulnerable\",\"LLM02\":\"vulnerable\",\"LLM03\":\"clean\",\"LLM04\":\"clean\",\"LLM05\":\"clean\",\"LLM06\":\"vulnerable\",\"LLM07\":\"vulnerable\",\"LLM08\":\"review\",\"LLM09\":\"clean\",\"LLM10\":\"clean\"}"
+  },
+  {
+   "name": "compliance score 50% (5 clean / 10 tested), coverage 100%",
+   "ok": true,
+   "detail": "50/100"
+  },
+  {
+   "name": "the endpoint filter works",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "OWASP page: statuses, score and the disclaimer text are shown",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Dashboard: 'OWASP compliance' card (50%) and the OWASP scan button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "findings are filtered by OWASP category (LLM07) and the card carries the OWASP badge",
+   "ok": true,
+   "detail": "7 kart"
+  },
+  {
+   "name": "API filter: the legacy 2023 id is accepted too (LLM06_SensitiveInfoDisclosure → LLM02)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "PDF: the OWASP summary, the coverage counter and the not-a-certificate disclaimer are present",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "CSV: the owasp_category column is filled",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer sees the OWASP matrix but there is no scan button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the viewer cannot start an OWASP scan through the API (403)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "New Test opens in Quick scan mode",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the quick scan review shows the target, 7 days, the budget and the digest",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the review says LLM06 is not run without the tool-abuse attestation",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "nothing was signed, saved or sent before the confirmation",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Start stays disabled until the authorization box is ticked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the quick scan finished as ONE run covering 9 OWASP categories",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a normal signed scope was created for it (valid, signed by the admin, no adaptive grant)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the cookie target is saved, its secret is held in memory and never returned",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the Targets page shows the cookie target without its secret",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the OWASP scan dialog offers 'Scan it by URL instead' next to the scope",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "framework scope was signed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the benchmark import reports 2 imported cases and 1 unsupported row",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the imported benchmark is an ordinary hashed library",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "an unknown benchmark kind is refused (422)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "an AISVS selection that matches no case is refused (422)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a run limited to AISVS-mapped benchmark cases started",
+   "ok": true,
+   "detail": "{\"id\":\"a7b02984-f023-4887-a3a3-e55a46ec2126\",\"cases\":2,\"owasp_planned\":[\"LLM01_PromptInjection\"],\"owasp_skipped\":[]}"
+  },
+  {
+   "name": "the run evaluated both benchmark cases",
+   "ok": true,
+   "detail": "completed"
+  },
+  {
+   "name": "the stats report an ASR for HarmBench and none for the benchmarks that were not run",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Compliance Suite: the ATLAS tab lists AML.T0054 as tested",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Compliance Suite: NIST AI RMF has Measure and Manage sections",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Compliance Suite: AISVS shows chapter C11 with evidence and the 'only AISVS' link",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Compliance Suite: the HarmBench card shows an ASR and the not-the-official-scorer note",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Compliance Suite: the Agentic tab lists ASI01..ASI10",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "OWASP page: the Agentic tab shows ten ASI cards",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "PDF report builds with the threat matrix section",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suite scope (multimodal + campaigns + tool abuse) was signed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "multimodal: the carrier file went out and the finding carries the pre-processing evidence",
+   "ok": true,
+   "detail": "[{\"name\":\"card.png\",\"format\":\"png\",\"kind\":\"image\",\"bytes\":1674,\"sha256\":\"554df6301526fc2649c9d17f44590f7316a09d14ffad63d3a8843f8325f645ed\"}]"
+  },
+  {
+   "name": "multimodal: the file's bytes are not in the stored evidence",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "multimodal: a scope without the grant refuses the file case (422)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "agentic chain: protected data reaching the outbound tool is a critical, verified finding",
+   "ok": true,
+   "detail": "[{\"rule\":\"EXFIL_CHAIN\",\"severity\":\"critical\",\"tool\":\"http_request\",\"detail\":\"data from another tool's result was passed to the outbound tool 'http_request'\"}]"
+  },
+  {
+   "name": "agentic chain: the path read_file → http_request is in the evidence",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "agentic chain: no judge was needed (deterministic verdict)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "knowledge map: a tree was stored with coverage numbers",
+   "ok": true,
+   "detail": "{\"nodes\":3,\"asked\":3,\"skipped\":0,\"covered\":1,\"uncovered\":1,\"exposed_nodes\":1,\"exposed_terms\":1,\"terms_total\":3,\"terms_found\":2,\"coverage\":0.6667}"
+  },
+  {
+   "name": "knowledge map: the leaked protected term became a verified finding without a judge",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "campaign: a scope without the grant refuses to create one (422)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Suite page: the multimodal tab shows the carrier file and the OCR status",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Suite page: the chain tab shows the tool path and EXFIL_CHAIN",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Suite page: the knowledge tree lists the nodes with their status",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "campaign: created from the UI; the session cap is the smaller of the form and the signed scope (4)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "campaign: sessions ran in the planned order (refused → next level → escalate)",
+   "ok": true,
+   "detail": "camp-1,camp-2,camp-3"
+  },
+  {
+   "name": "campaign: outcomes were refused, clean, violation and the campaign finished as found",
+   "ok": true,
+   "detail": "[\"refused\",\"clean\",\"violation\"]"
+  },
+  {
+   "name": "campaign: the state holds no target text",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Suite page: the campaign card shows the sessions and the defence profile",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Findings page: the chain finding has its badge",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "PDF report of the knowledge-map run builds",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "payload scope: the branching grant is part of the signed content, the plain scope has none",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning",
+   "ok": true,
+   "detail": "{\"id\":\"913ec8a2-dc69-4a50-8d28-5253ae8aa21f\",\"name\":\"memory-poisoning_notes.txt\",\"version\":\"import-1\",\"sha256\":\"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47\",\"cases\":2,\"report\":{\"r"
+  },
+  {
+   "name": "the imported library ran",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the imported payload leaked and the finding carries family, ASI06, ATLAS AML.T0080.000 and the source note",
+   "ok": true,
+   "detail": "{\"asi\":\"ASI06_MemoryContextPoisoning\",\"atlas\":[{\"id\":\"AML.T0051.001\",\"name\":\"LLM Prompt Injection: Indirect\",\"tactics\":[{\"id\":\"AML.TA0005\",\"name\":\"Execution\"}]},{\"id\":\"AML.T0080.000\",\"name\":\"AI Agent Context Poisoning: Memory\",\"tactics\":[{\"id\":\"AML.TA0006\",\"name\":\"Persistence\"}]}],\"family\":\"memory_poisoning\",\"nist\":[{\"id\":\"MEASURE 2.7\",\"function\":\"Measure\"}],\"aisvs\":[\"C7\"]}"
+  },
+  {
+   "name": "CSV report has the attack_family and source columns",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "PDF report builds with the attack-family threat matrix",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a branching library validates and is saved",
+   "ok": true,
+   "detail": "{\"id\":\"5f1ce0d6-2f96-41cd-918c-3cfceff5883b\",\"name\":\"Payload branching\",\"version\":\"1\",\"sha256\":\"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b"
+  },
+  {
+   "name": "branching: a scope without 'branching_allowed' refuses the run (422)",
+   "ok": true,
+   "detail": "{\"detail\":{\"message\":\"br-001: this case branches on the target's replies, which needs 'branching_allowed' in the signed scope\",\"reason\":null}}"
+  },
+  {
+   "name": "branching: the run was accepted under the granted scope",
+   "ok": true,
+   "detail": "{\"id\":\"e0760803-c18d-4117-8dfc-486ee3daecf7\",\"cases\":1,\"owasp_planned\":[\"LLM07_SystemPromptLeakage\"],\"owasp_skipped\":[]}"
+  },
+  {
+   "name": "branching: the code followed the rule (s1 → s3, s2 never sent) and the path is in the evidence",
+   "ok": true,
+   "detail": "{\"turns\":2,\"steps_defined\":3,\"path\":[\"s1\",\"s3\"],\"trace\":[{\"turn\":1,\"step\":\"s1\",\"via\":\"rule 1\",\"goto\":\"s3\",\"refused\":true,\"reply_chars\":39},{\"turn\":2,\"step\":\"s3\",\"via\":\"default\",\"goto\":\"end\",\"refused\":false,\"reply_chars\":135}]}"
+  },
+  {
+   "name": "branching: the finding is verified and the type is recorded",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "UI: the finding card shows the branching badge and the path chips",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "UI: finding cards show the attack-family badge",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "UI: the library page has the external payload import panel with family and layout choices",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "UI: the Compliance 'Attack families' tab lists the 7 families with their ASI and ATLAS ids",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "UI: the scope list shows the 'Multi-turn branching' grant badge",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no critical errors in the browser (console/page)",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

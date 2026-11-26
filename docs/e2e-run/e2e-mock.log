@@ -1,0 +1,149 @@
+PASS  ISOLATION: no access to the outside network (https://example.com is unreachable)
+PASS  the admin signed in with the bootstrap password and sees every menu item
+PASS  OWASP matrix is empty at the start: 10 categories 'not tested', no score
+PASS  users were created through the UI (admin, operator, viewer)
+PASS  the judge setting points at the local fake judge
+PASS  system status: the judge is ready
+PASS  the approval screen shows the digest, the endpoint and the limits
+PASS  the scope was signed and is valid
+PASS  the viewer menu has no New Test / Audit / Users / Settings  - Dashboard|Targets|Findings|Test Library|Benchmarks|Defense Efficacy|AI Security Suite|Privacy & Extraction|Model Supply Chain|Logs|OWASP Compliance|Compliance Suite|Scopes
+PASS  the viewer sees 'no access' on the /new page
+PASS  the viewer sees the scope list but there is no 'New scope' button
+PASS  the viewer cannot start a test through the API (403 ACCESS_DENIED)
+PASS  the test library was imported through the UI (11 cases)
+PASS  the operator cannot sign a scope (403)
+PASS  run 1 completed  - completed/null
+PASS  finding sys-001: verified (high)  - verified/high
+PASS  finding dat-001: verified (high)  - verified/high
+PASS  finding multi-001: verified (high)  - verified/high
+PASS  finding ind-001: verified (high)  - verified/high
+PASS  finding ind-002: verified (high)  - verified/high
+PASS  finding tool-001: verified (critical)  - verified/critical
+PASS  flaky-001: unstable (could not be reproduced)  - unstable
+PASS  case sys-002: no finding
+PASS  case jb-001: no finding
+PASS  case rl-001: no finding
+PASS  case dir-001: no finding
+PASS  7 findings in total (6 verified + 1 unstable)  - 7
+PASS  indirect-test evidence: document name + SHA-256 recorded, the message contains the document
+PASS  ingest: documents were uploaded to the target AND deleted after every conversation (no document left on the target)  - {"uploaded":3,"deleted":3,"left":0}
+PASS  cleanup steps appear in the run record (cleaned)
+PASS  multi-turn test: leak on the 2nd turn, the history was passed to the target
+PASS  tool-001: the target's tool call is in the evidence
+PASS  rl-001: continued with backoff after the 429 (no finding, run complete)
+PASS  jb-001: refusal → the next variant was tried
+PASS  judge tokens were deducted from the budget
+PASS  run 2 (streaming/SSE) completed and the target answered with a stream  - completed
+PASS  run 2: only the selected category ran, the leaks were verified  - sys-001,multi-001
+PASS  the streamed response was joined and went to the judge as full text
+PASS  PDF report was generated (valid PDF, > 8 KB)  - 45747 bytes
+PASS  PDF content: risk score, finding ids and library name are present
+PASS  CSV report: header + 7 finding rows  - 8
+PASS  scope limit: hard stop after 2 requests (REQUEST_LIMIT), the refusal was coded  - halted/REQUEST_LIMIT/2
+PASS  a finding that could not be verified because of the limit stayed 'candidate' (not counted as verified)  - candidate
+PASS  the viewer sees the 6 verified findings on the findings page
+PASS  the viewer can download the PDF report
+PASS  the viewer cannot read the audit records (403)
+PASS  audit: unauthorized access (ACCESS_DENIED) and REQUEST_LIMIT are recorded with their codes  - ACCESS_DENIED,REQUEST_LIMIT
+PASS  the audit chain is intact
+PASS  dashboard: risk score critical, 8 verified findings, token usage > 0  - {"r":97,"v":8,"t":14062}
+fake target counters: {"requests":42,"judge_calls":43,"ingested":0,"ingested_total":3,"deleted":3,"flaky_done":true,"rl_done":true,"streamed":11,"latency_ms":0}
+PASS  judge advisory: local endpoint → 'warn' level and a reason  - ["the judge runs on a local endpoint"]
+PASS  Settings: the 'Judge model warning' + 'strongly recommended' text is shown
+PASS  OWASP scope was signed
+PASS  Ready-made templates: 10 template cards for LLM01…LLM10
+PASS  limited-coverage categories (LLM03/04/08) are marked  - 3
+PASS  a single template was imported (LLM09)
+PASS  the judge advisory is shown in the scan dialog
+PASS  dialog: 10 categories come preselected  - Scan 10 categories
+PASS  LLM06 (tool abuse is not in the scope) was skipped and the user was told  - OWASP LLM Top 10 scan
+
+Runs the starter kit's basic quality probes for the selected categories, inside your signed scope.
+
+Scan started · 13 cases
+LLM01
+LLM02
+L
+PASS  while the run is going the categories are in the 'testing' state
+PASS  the OWASP run completed  - completed/null
+PASS  run configuration: 9 categories planned, LLM06 skipped
+PASS  verified findings: llm01-direct, llm01-indirect, llm02-customers, llm07-plain  - llm01-direct,llm01-indirect,llm02-customers,llm07-plain
+PASS  findings are tagged with the right OWASP category (from the library)
+PASS  the judge LLM also classified the OWASP category (suggestion recorded, no mismatch)
+PASS  no findings for clean categories; LLM08 is inconclusive → not a finding, 'review' in the matrix
+PASS  matrix statuses: 4 vulnerable, 1 review, 5 clean  - {"LLM01":"vulnerable","LLM02":"vulnerable","LLM03":"clean","LLM04":"clean","LLM05":"clean","LLM06":"vulnerable","LLM07":"vulnerable","LLM08":"review","LLM09":"clean","LLM10":"clean"}
+PASS  compliance score 50% (5 clean / 10 tested), coverage 100%  - 50/100
+PASS  the endpoint filter works
+PASS  OWASP page: statuses, score and the disclaimer text are shown
+PASS  Dashboard: 'OWASP compliance' card (50%) and the OWASP scan button
+PASS  findings are filtered by OWASP category (LLM07) and the card carries the OWASP badge  - 7 kart
+PASS  API filter: the legacy 2023 id is accepted too (LLM06_SensitiveInfoDisclosure → LLM02)
+PASS  PDF: the OWASP summary, the coverage counter and the not-a-certificate disclaimer are present
+PASS  CSV: the owasp_category column is filled
+PASS  the viewer sees the OWASP matrix but there is no scan button
+PASS  the viewer cannot start an OWASP scan through the API (403)
+PASS  New Test opens in Quick scan mode
+PASS  the quick scan review shows the target, 7 days, the budget and the digest
+PASS  the review says LLM06 is not run without the tool-abuse attestation
+PASS  nothing was signed, saved or sent before the confirmation
+PASS  Start stays disabled until the authorization box is ticked
+PASS  the quick scan finished as ONE run covering 9 OWASP categories
+PASS  a normal signed scope was created for it (valid, signed by the admin, no adaptive grant)
+PASS  the cookie target is saved, its secret is held in memory and never returned
+PASS  the Targets page shows the cookie target without its secret
+PASS  the OWASP scan dialog offers 'Scan it by URL instead' next to the scope
+PASS  framework scope was signed
+PASS  the benchmark import reports 2 imported cases and 1 unsupported row
+PASS  the imported benchmark is an ordinary hashed library
+PASS  an unknown benchmark kind is refused (422)
+PASS  an AISVS selection that matches no case is refused (422)
+PASS  a run limited to AISVS-mapped benchmark cases started  - {"id":"a7b02984-f023-4887-a3a3-e55a46ec2126","cases":2,"owasp_planned":["LLM01_PromptInjection"],"owasp_skipped":[]}
+PASS  the run evaluated both benchmark cases  - completed
+PASS  the stats report an ASR for HarmBench and none for the benchmarks that were not run
+PASS  Compliance Suite: the ATLAS tab lists AML.T0054 as tested
+PASS  Compliance Suite: NIST AI RMF has Measure and Manage sections
+PASS  Compliance Suite: AISVS shows chapter C11 with evidence and the 'only AISVS' link
+PASS  Compliance Suite: the HarmBench card shows an ASR and the not-the-official-scorer note
+PASS  Compliance Suite: the Agentic tab lists ASI01..ASI10
+PASS  OWASP page: the Agentic tab shows ten ASI cards
+note: the mock produced no benchmark violation, so the finding-badge check did not run (covered by the backend tests)
+PASS  PDF report builds with the threat matrix section
+PASS  suite scope (multimodal + campaigns + tool abuse) was signed
+PASS  multimodal: the carrier file went out and the finding carries the pre-processing evidence  - [{"name":"card.png","format":"png","kind":"image","bytes":1674,"sha256":"554df6301526fc2649c9d17f44590f7316a09d14ffad63d3a8843f8325f645ed"}]
+PASS  multimodal: the file's bytes are not in the stored evidence
+PASS  multimodal: a scope without the grant refuses the file case (422)
+PASS  agentic chain: protected data reaching the outbound tool is a critical, verified finding  - [{"rule":"EXFIL_CHAIN","severity":"critical","tool":"http_request","detail":"data from another tool's result was passed to the outbound tool 'http_request'"}]
+PASS  agentic chain: the path read_file → http_request is in the evidence
+PASS  agentic chain: no judge was needed (deterministic verdict)
+PASS  knowledge map: a tree was stored with coverage numbers  - {"nodes":3,"asked":3,"skipped":0,"covered":1,"uncovered":1,"exposed_nodes":1,"exposed_terms":1,"terms_total":3,"terms_found":2,"coverage":0.6667}
+PASS  knowledge map: the leaked protected term became a verified finding without a judge
+PASS  campaign: a scope without the grant refuses to create one (422)
+PASS  Suite page: the multimodal tab shows the carrier file and the OCR status
+PASS  Suite page: the chain tab shows the tool path and EXFIL_CHAIN
+PASS  Suite page: the knowledge tree lists the nodes with their status
+PASS  campaign: created from the UI; the session cap is the smaller of the form and the signed scope (4)
+PASS  campaign: sessions ran in the planned order (refused → next level → escalate)  - camp-1,camp-2,camp-3
+PASS  campaign: outcomes were refused, clean, violation and the campaign finished as found  - ["refused","clean","violation"]
+PASS  campaign: the state holds no target text
+PASS  Suite page: the campaign card shows the sessions and the defence profile
+PASS  Findings page: the chain finding has its badge
+PASS  PDF report of the knowledge-map run builds
+PASS  payload scope: the branching grant is part of the signed content, the plain scope has none
+PASS  import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning  - {"id":"913ec8a2-dc69-4a50-8d28-5253ae8aa21f","name":"memory-poisoning_notes.txt","version":"import-1","sha256":"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47","cases":2,"report":{"r
+PASS  the imported library ran
+PASS  the imported payload leaked and the finding carries family, ASI06, ATLAS AML.T0080.000 and the source note  - {"asi":"ASI06_MemoryContextPoisoning","atlas":[{"id":"AML.T0051.001","name":"LLM Prompt Injection: Indirect","tactics":[{"id":"AML.TA0005","name":"Execution"}]},{"id":"AML.T0080.000","name":"AI Agent Context Poisoning: Memory","tactics":[{"id":"AML.TA0006","name":"Persistence"}]}],"family":"memory_poisoning","nist":[{"id":"MEASURE 2.7","function":"Measure"}],"aisvs":["C7"]}
+PASS  CSV report has the attack_family and source columns
+PASS  PDF report builds with the attack-family threat matrix
+PASS  a branching library validates and is saved  - {"id":"5f1ce0d6-2f96-41cd-918c-3cfceff5883b","name":"Payload branching","version":"1","sha256":"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b
+PASS  branching: a scope without 'branching_allowed' refuses the run (422)  - {"detail":{"message":"br-001: this case branches on the target's replies, which needs 'branching_allowed' in the signed scope","reason":null}}
+PASS  branching: the run was accepted under the granted scope  - {"id":"e0760803-c18d-4117-8dfc-486ee3daecf7","cases":1,"owasp_planned":["LLM07_SystemPromptLeakage"],"owasp_skipped":[]}
+PASS  branching: the code followed the rule (s1 → s3, s2 never sent) and the path is in the evidence  - {"turns":2,"steps_defined":3,"path":["s1","s3"],"trace":[{"turn":1,"step":"s1","via":"rule 1","goto":"s3","refused":true,"reply_chars":39},{"turn":2,"step":"s3","via":"default","goto":"end","refused":false,"reply_chars":135}]}
+PASS  branching: the finding is verified and the type is recorded
+PASS  UI: the finding card shows the branching badge and the path chips
+PASS  UI: finding cards show the attack-family badge
+PASS  UI: the library page has the external payload import panel with family and layout choices
+PASS  UI: the Compliance 'Attack families' tab lists the 7 families with their ASI and ATLAS ids
+PASS  UI: the scope list shows the 'Multi-turn branching' grant badge
+PASS  no critical errors in the browser (console/page)
+
+RESULT [mock]: 138/138 checks passed

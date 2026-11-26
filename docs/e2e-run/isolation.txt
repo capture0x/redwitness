@@ -1,0 +1,10 @@
+== network interfaces (only loopback should exist)
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+== default route (there should be none)
+none
+== outside network attempts (all must fail)
+curl https://example.com -> 000
+curl https://example.com -> NO ACCESS
+1.1.1.1 -> no access: Network is unreachable
+8.8.8.8 -> no access: Network is unreachable
+93.184.216.34 -> no access: Network is unreachable

@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest an idea or an improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How could AIVeritX help? Sketches and examples are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Test library or importers
+        - Judging, verification or accuracy
+        - Compliance mappings (OWASP, ATLAS, NIST, AISVS)
+        - UI and onboarding
+        - Reports and CI/CD
+        - Install and deployment
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Fits the design rules
+      description: "The engine holds no attack content, every request goes through the scope gate and the Governor, and evidence beats opinion."
+      options:
+        - label: I believe this idea respects them (or I explain below why it should change)
+          required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to work on this myself

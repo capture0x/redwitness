@@ -1,0 +1,61 @@
+name: Bug report
+description: Something does not work as described
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Please do not paste API keys, cookies or real target data. For a security vulnerability use the Security tab instead of this form.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Settings -> ...
+        2. Start a scan with ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshot
+      description: "Output of `docker compose logs --tail 50 backend`, or a screenshot. Remove secrets first."
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "1.0.0 or a commit hash"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options:
+        - Docker (install.sh or docker compose)
+        - Without Docker (development setup)
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS and browser
+      placeholder: "Ubuntu 24.04, Firefox 130"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues
+          required: true
+        - label: I removed secrets from everything I pasted
+          required: true
