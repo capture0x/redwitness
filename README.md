@@ -152,42 +152,49 @@ Most LLM test tools send a pile of prompts and show you what the model said. AIV
 - **CI/CD gate**: scoped, expiring API tokens; incomplete scans never pass.
 
 <details>
-<summary><b>All capabilities (30+)</b></summary>
+<summary><b>All capabilities (32)</b></summary>
 
-| Capability | What you get |
-|---|---|
-| **Defense efficacy** | Same library against `guardrail_off` and `guardrail_on` endpoints; per-vector *blocked / bypassed / regression*, **Defense Score** with 95% Wilson interval |
-| **Reasoning-layer evaluation** | `reasoning_chain` cases check every intermediate answer with code rules; **Reasoning Deviation** shown as a step-by-step timeline |
-| **Sandboxed verification** | Opt-in isolated runner (no network, read-only, no capabilities) labels unsafe output `verified_exploitable` or `not_exploitable`; shell is never executed |
-| **Accuracy layer** | Judge bias control, impact matrix that caps severity, adversarial verifier, human review with precision / recall calibration |
-| **OWASP LLM Top 10 (2025)** | Starter kit (10 templates), coverage matrix, compliance score, one-click scans, legacy-id mapping |
-| **Compliance Suite** | One set of results seen through **OWASP Agentic (ASI) 2026**, **MITRE ATLAS** (threat matrix, per-finding badges), **NIST AI RMF** (Measure / Manage) and **OWASP AISVS** (chapter level); "test only AISVS-mapped cases" runs |
-| **Benchmark datasets and ASR** | Import **HarmBench, JailbreakBench and StrongREJECT** files from your own copy; results are reported as Attack Success Rate (ASR) per benchmark |
-| **Multimodal carrier** | Image or audio files from your library are attached to a message and only carried; before sending, OCR and metadata are read and the file is withheld if one of your canaries is inside |
-| **Agentic tool chains** | Scripted multi-step scenarios on the fake tool sandbox: each step's message may quote what an earlier tool returned; a forbidden call or protected data reaching an outbound tool is a deterministic **critical** finding |
-| **Knowledge Graph & Coverage Mapper** | A question tree you write is asked of the target; the knowledge tree and per-topic coverage are built from the replies in code; protected terms that leak become verified findings. Exploration and reporting only |
-| **Multi-session campaigns** | A "patient" run over several sessions on a ladder of your cases; the planner is plain code (escalate, retry, step back, stop) and keeps only counters, never target text |
-| **PLAGUE and PersonaTeaming** | Adaptive methods with a planning / reflecting state machine and a per-run lifelong memory; every strategy and persona is written by you in the library |
-| **Adaptive Attacker agent** | State machine (probe → analyze → generate → validate → attack → confirm); rewrites refused cases in operator-allowed families; scope-gated and budgeted |
-| **Attack tree** | Interactive graph of what the agent tried, why it moved on, how the verdict was reached |
-| **Remediator** | Reviewable secure prompt / code patch per finding, secrets masked, never auto-applied |
-| **Model benchmarking** | Same test set to 2-4 targets of one scope; per-category failure rates and ranking |
-| **Tool sandbox** | Fake `read_file` / `query_db` / `http_request` tools with canned results (nothing executes); a forbidden call or a secret passed to an outbound tool is a deterministic **Critical** |
-| **Crescendo conversations** | 5-10 turn scenarios whose later turns quote the target's previous reply (`{previous_reply}`); per-turn stage in the evidence |
-| **Payload library import** | Bring your own `.txt` / JSON / JSONL / CSV / YAML / AltayDuel files; payloads stay verbatim carriers tagged with an **attack family** (instruction override, role play, encoding evasion, payload splitting, memory poisoning, tool abuse, exfiltration) that fills the ATLAS and Agentic mapping |
-| **Rule-based multi-turn branching** | The code picks the next library message from the target's reply with the case's own rule table (forward-only, scope-gated by `branching_allowed`); the path is shown in the finding |
-| **Markdown exfiltration detector** | Canary inside an image, link, HTML `src/href` or bare URL (also percent/base64-encoded) is a **High** leak |
-| **Document ingestion (RAG)** | Library text rendered to visible PDF / DOCX / HTML / MD / CSV / TXT, uploaded, cleaned up; per-conversation canary tokens |
-| **Defense-bypass transforms** | `base64`, `rot13`, `hex`, `homoglyph`, `split`, `language_switch`; wording templates come from the library |
-| **Model supply chain** | Static pickle/zip/safetensors/GGUF analysis: never loads or executes the file; hash verification |
-| **Vector DB exposure** | Read-only, credential-less probes of Chroma, Qdrant, Weaviate; masked previews; 3 records per collection |
-| **Model extraction exposure** | Budgeted query harvest; cost estimate, throttling, repeatability, lookup-surrogate fidelity (nothing is trained) |
-| **Membership inference signal** | Member vs. control continuation test with AUC and optional log-probs; hashes only, no sample text stored |
-| **CI/CD gate** | `POST /api/scan-ci` with a revocable, expiring, scope-bound token; incomplete scans never pass |
-| **Targets and auth types** | Save targets once (OpenAI, Anthropic, Ollama or any OpenAI-compatible URL); authenticate with an API key, a **browser cookie string** or a **custom header**; credentials are kept in server memory only |
-| **Quick scan** | Enter a URL and credentials, review exactly what will be signed, tick the authorization box: one run covers the OWASP kit, Crescendo and Markdown-leak checks (plus tool abuse if you attest) |
-| **Drag-and-drop uploads** | Drop a PDF, DOCX or EML (only its visible text is extracted and re-created) or a JSON/YAML test library |
-| **Governance** | Signed scope, RBAC (viewer / operator / admin), hash-chained audit, kill switch |
+<table>
+<tr><th width="30%" align="left">Capability</th><th width="70%" align="left">What you get</th></tr>
+<tr><td colspan="2"><b>Trust and verification</b></td></tr>
+<tr><td>Signed scope and governance</td><td>Immutable signed scope, role-based access, hash-chained audit log, kill switch</td></tr>
+<tr><td>Accuracy layer</td><td>Judge bias control, severity caps, adversarial verifier, human calibration</td></tr>
+<tr><td>Sandboxed verification</td><td>An isolated runner checks whether unsafe output is really exploitable</td></tr>
+<tr><td>Defense efficacy</td><td>The same attacks with and without a guardrail, scored with a 95% interval</td></tr>
+<tr><td>Reasoning-layer evaluation</td><td>Code rules check every intermediate step of a multi-step answer</td></tr>
+<tr><td colspan="2"><b>Attack coverage</b></td></tr>
+<tr><td>Adaptive Attacker agent</td><td>Rewrites refused cases within operator-allowed families, scoped and budgeted</td></tr>
+<tr><td>PLAGUE and PersonaTeaming</td><td>Planning and persona strategies, all written by you in the library</td></tr>
+<tr><td>Crescendo conversations</td><td>5 to 10 turn scenarios that build on the target&#x27;s previous replies</td></tr>
+<tr><td>Rule-based branching</td><td>The target&#x27;s reply picks the next library message, forward only</td></tr>
+<tr><td>Multi-session campaigns</td><td>Patient escalation across several sessions, planned by plain code</td></tr>
+<tr><td>Defense-bypass transforms</td><td>Base64, ROT13, hex, homoglyph, split and language-switch encodings</td></tr>
+<tr><td>Payload library import</td><td>TXT, JSON, JSONL, CSV, YAML or AltayDuel payloads, tagged by attack family</td></tr>
+<tr><td colspan="2"><b>Agents, tools and data</b></td></tr>
+<tr><td>Tool sandbox</td><td>Fake tools with canned results; a forbidden tool call is a Critical finding</td></tr>
+<tr><td>Agentic tool chains</td><td>Multi-step tool scenarios; protected data leaving through a tool is Critical</td></tr>
+<tr><td>Document ingestion (RAG)</td><td>Test documents as PDF, DOCX, HTML, MD, CSV or TXT, removed after each run</td></tr>
+<tr><td>Multimodal carrier</td><td>Image and audio files carried to the target, withheld if a canary is inside</td></tr>
+<tr><td>Markdown exfiltration detector</td><td>Flags canaries hidden in images, links or URLs, even when encoded</td></tr>
+<tr><td>Knowledge map</td><td>Maps what the target knows per topic; leaked protected terms become findings</td></tr>
+<tr><td colspan="2"><b>Privacy and models</b></td></tr>
+<tr><td>Vector DB exposure</td><td>Read-only probes of Chroma, Qdrant and Weaviate with masked previews</td></tr>
+<tr><td>Model extraction exposure</td><td>Budgeted query harvest with a cost estimate; nothing is trained</td></tr>
+<tr><td>Membership inference signal</td><td>Member versus control test with AUC; only hashes are stored</td></tr>
+<tr><td>Model supply chain</td><td>Static analysis of pickle, safetensors and GGUF files; never executes them</td></tr>
+<tr><td>Model benchmarking</td><td>One test set against 2 to 4 models, with failure rates per category</td></tr>
+<tr><td colspan="2"><b>Compliance and reporting</b></td></tr>
+<tr><td>OWASP LLM Top 10</td><td>Starter kit, coverage matrix, compliance score and one-click scans</td></tr>
+<tr><td>Compliance Suite</td><td>OWASP Agentic (ASI), MITRE ATLAS, NIST AI RMF and OWASP AISVS views</td></tr>
+<tr><td>Benchmark datasets</td><td>HarmBench, JailbreakBench and StrongREJECT with Attack Success Rate</td></tr>
+<tr><td>Attack tree</td><td>Interactive graph of what the agent tried and how the verdict was reached</td></tr>
+<tr><td>Remediator</td><td>Suggested secure prompt and code patch per finding, never auto-applied</td></tr>
+<tr><td colspan="2"><b>Workflow and integration</b></td></tr>
+<tr><td>Quick scan</td><td>Enter a URL, review the signed plan and run the full OWASP kit in one step</td></tr>
+<tr><td>Targets and auth types</td><td>Save targets with an API key, a browser cookie or a custom header</td></tr>
+<tr><td>Drag-and-drop uploads</td><td>Drop a PDF, DOCX or EML file, or a JSON / YAML test library</td></tr>
+<tr><td>CI/CD gate</td><td>Scoped, expiring API token; an incomplete scan never passes the gate</td></tr>
+</table>
 
 </details>
 
