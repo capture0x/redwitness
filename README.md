@@ -4,7 +4,7 @@
 
 ### Red-team your LLM app inside a signed boundary. Trust every finding.
 
-**Prompts · RAG · tools · vector stores · model files**: tested under a **cryptographically signed scope**, judged with **verbatim evidence**, confirmed by **replay**, mapped to **OWASP LLM Top 10 **, **MITRE ATLAS**, **NIST AI RMF** and **OWASP Agentic**.
+**Prompts · RAG · tools · vector stores · model files**: tested under a **cryptographically signed scope**, judged with **verbatim evidence**, confirmed by **replay**, mapped to **OWASP LLM Top 10**, **MITRE ATLAS**, **NIST AI RMF** and **OWASP Agentic**.
 
 > **TL;DR:** AIVeritX is a self-hosted platform that tests LLM apps against prompt injection, RAG poisoning and agent abuse. Unlike other scanners, it proves every finding with a signed scope, verbatim evidence, replay and human calibration. One command to install, self-hosted, no telemetry.
 
