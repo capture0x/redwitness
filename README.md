@@ -1,46 +1,63 @@
 <div align="center">
 
-# 🔴 AIVeritX
+<img src="docs/logo.svg" alt="AIVeritX logo" width="88" height="88">
 
-### Red-team your LLM app inside a signed boundary. Trust every finding.
+<h1>AIVeritX</h1>
 
-**Prompts · RAG · tools · vector stores · model files**: tested under a **cryptographically signed scope**, judged with **verbatim evidence**, confirmed by **replay**, mapped to **OWASP LLM Top 10**, **MITRE ATLAS**, **NIST AI RMF** and **OWASP Agentic**.
+<p><strong>Self-hosted red-teaming platform for LLM applications</strong></p>
 
-> **TL;DR:** AIVeritX is a self-hosted platform that tests LLM apps against prompt injection, RAG poisoning and agent abuse. Unlike other scanners, it proves every finding with a signed scope, verbatim evidence, replay and human calibration. One command to install, self-hosted, no telemetry.
+<p>
+Test prompts, RAG pipelines, agents, tools, vector stores and model files inside a cryptographically signed scope.<br>
+Every finding is backed by verbatim evidence, confirmed by replay and mapped to OWASP, MITRE ATLAS and NIST AI RMF.
+</p>
 
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-![Tests](https://img.shields.io/badge/tests-790%20passing-brightgreen)
-![Python](https://img.shields.io/badge/python-3.12%20%7C%203.14-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/docker%20compose-ready-2496ED?logo=docker&logoColor=white)
-![OWASP](https://img.shields.io/badge/OWASP-LLM%20Top%2010%20(2025)-000000?logo=owasp&logoColor=white)
-![Self-hosted](https://img.shields.io/badge/self--hosted-no%20telemetry-success)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-Contributor%20Covenant-7b3fe4.svg)](CODE_OF_CONDUCT.md)
+<p>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License: AGPL-3.0"></a>
+<img src="https://img.shields.io/badge/tests-790%20passing-2f855a?style=flat-square" alt="Tests: 790 passing">
+<img src="https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+<img src="https://img.shields.io/badge/Next.js-16-111111?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16">
+<img src="https://img.shields.io/badge/Docker%20Compose-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose ready">
+<img src="https://img.shields.io/badge/OWASP-LLM_Top_10-black?style=flat-square" alt="OWASP LLM Top 10">
+</p>
 
-[Quick start](#-quick-start-2-minutes) · [Why](#-why-aiveritx) · [Features](#-features) · [How it works](#-how-a-test-runs) · [Compare](#-where-aiveritx-fits) · [Security](#-security--architecture) · [Docs](#documentation) · [Contributing](#-contributing) · [Legal](#legal-disclaimer)
+<p>
+<a href="#quick-start-2-minutes">Quick start</a> ·
+<a href="#features">Features</a> ·
+<a href="#how-a-test-runs">How it works</a> ·
+<a href="#security--architecture">Security</a> ·
+<a href="#documentation">Documentation</a> ·
+<a href="#contributing">Contributing</a> ·
+<a href="#legal-disclaimer">Legal</a>
+</p>
+
+<sub>One-command install · Self-hosted · No telemetry</sub>
 
 </div>
 
 > [!WARNING]
 > **For legal and authorized use only.** AIVeritX is a security testing tool. Use it only against systems you own or have explicit written permission to test. Unauthorized testing may be illegal. The authors and contributors accept no liability for misuse or for any damage it causes. See [Legal disclaimer](#legal-disclaimer).
 
-### 🎬 Demo
+## Screenshots
 
 <!-- A short screen recording can go here later: <img src="docs/demo.gif" alt="AIVeritX live scan demo" width="900"> -->
 
 ![Dashboard: metric cards, risk trend, live agent timeline, system health and model comparison](docs/screenshots/dashboard.png)
 
-| Agent live stream and system health | Metric cards (accent line on hover) |
-|---|---|
-| ![Agent live stream in JetBrains Mono next to system health](docs/screenshots/dashboard-live-stream.png) | ![Four metric cards with a thin accent line on hover](docs/screenshots/dashboard-metrics-hover.png) |
+<table>
+<tr>
+<th width="50%">Agent live stream and system health</th>
+<th width="50%">Metric cards (accent line on hover)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/dashboard-live-stream.png" alt="Agent live stream in JetBrains Mono next to system health" width="100%"></td>
+<td><img src="docs/screenshots/dashboard-metrics-hover.png" alt="Four metric cards with a thin accent line on hover" width="100%"></td>
+</tr>
+</table>
 
 > **Most LLM scanners tell you what the model said. AIVeritX tells you whether you can believe it, and proves it was safe to run.**
 > No request leaves the building without a signed scope. No finding is reported without a quote, a replay and a second opinion.
 
-## ⚡ Quick start (2 minutes)
+## Quick start (2 minutes)
 
 ```bash
 git clone https://github.com/capture0x/AIVeritX.git && cd AIVeritX
@@ -51,13 +68,22 @@ The installer is interactive (judge key, UI port, optional sandbox runner) and s
 
 Open **http://localhost:3000**, sign in as `admin`, then **New Test → Quick scan**: enter your endpoint, tick *"I am authorized to test this target"*, press **Sign and start scan**. You get a verified, evidence-backed report with the OWASP kit, Crescendo and Markdown-leak checks.
 
-No API key yet? The repo ships a deterministic vulnerable mock target and judge, see [Try it without any API key](#-setup-in-detail).
+No API key yet? The repo ships a deterministic vulnerable mock target and judge, see [Try it without any API key](#setup-in-detail).
 
 **Made for first-time users.** A *Getting started* panel on the dashboard walks you through three steps (judge key, first target, first scan) and ticks each one by itself. Empty pages tell you what to do next, every form field has an (i) tooltip, and errors say what to do instead of what failed.
 
-| Getting started wizard | Field help (i) | Empty state with a next step |
-|---|---|---|
-| ![Getting started wizard](docs/screenshots/onboarding-wizard.png) | ![Field help tooltips](docs/screenshots/help-tooltips.png) | ![Empty targets page](docs/screenshots/empty-state-targets.png) |
+<table>
+<tr>
+<th width="33%">Getting started wizard</th>
+<th width="33%">Field help (i)</th>
+<th width="33%">Empty state with a next step</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/onboarding-wizard.png" alt="Getting started wizard" width="100%"></td>
+<td><img src="docs/screenshots/help-tooltips.png" alt="Field help tooltips" width="100%"></td>
+<td><img src="docs/screenshots/empty-state-targets.png" alt="Empty targets page" width="100%"></td>
+</tr>
+</table>
 
 *These three screenshots simulate a fresh installation by answering the status calls with empty data; the rest of the UI is the real app.*
 
@@ -84,7 +110,7 @@ Run the same attacks with and without your guardrail and get a **Defense Score**
 </tr>
 </table>
 
-## 🎯 Why AIVeritX
+## Why AIVeritX
 
 **Five things that make a finding believable.** Each one is enforced in code and pinned by tests.
 
@@ -100,11 +126,11 @@ Underneath all five: a **signed scope** decides what may be tested before the fi
 
 Most LLM test tools send a pile of prompts and show you what the model said. AIVeritX is built around a different question: **can you trust the result, and was it safe to run?**
 
-- 🔏 **Authorization is code, not a promise.** A test only starts under a *signed, immutable scope*: endpoints, attack classes, token/request/rate/conversation limits, even whether an attacker model may rewrite refused cases. An unsigned, expired, revoked or superseded scope means no request leaves the building.
-- 🧾 **Evidence over opinion.** A judge LLM must quote the violating text *verbatim*; a finding only becomes **verified** after it reproduces in fresh conversations; planted **canaries** and **deterministic detectors** (tool calls, Markdown leaks) back up or override a judge that is wrong.
-- 📚 **The engine holds no attack content.** Every test message, tool definition and transform wording comes from your versioned, hashed test library. The engine carries state, enforces limits and records evidence.
-- 🧬 **Every layer of the AI stack.** Prompt and agent behavior, RAG documents, tool use, vector stores, model files and privacy leakage, in one platform, one audit log, one report.
-- 🚦 **Built for pipelines.** A scoped, expiring API token turns any scan into a CI gate.
+- **Authorization is code, not a promise.** A test only starts under a *signed, immutable scope*: endpoints, attack classes, token/request/rate/conversation limits, even whether an attacker model may rewrite refused cases. An unsigned, expired, revoked or superseded scope means no request leaves the building.
+- **Evidence over opinion.** A judge LLM must quote the violating text *verbatim*; a finding only becomes **verified** after it reproduces in fresh conversations; planted **canaries** and **deterministic detectors** (tool calls, Markdown leaks) back up or override a judge that is wrong.
+- **The engine holds no attack content.** Every test message, tool definition and transform wording comes from your versioned, hashed test library. The engine carries state, enforces limits and records evidence.
+- **Every layer of the AI stack.** Prompt and agent behavior, RAG documents, tool use, vector stores, model files and privacy leakage, in one platform, one audit log, one report.
+- **Built for pipelines.** A scoped, expiring API token turns any scan into a CI gate.
 
 ### What it does differently
 
@@ -116,73 +142,101 @@ Most LLM test tools send a pile of prompts and show you what the model said. AIV
 | "Findings I can't reproduce" | Each finding stores its transcript, replays and the exact library hash |
 | "Results I can't take to compliance" | OWASP 2025 matrix with honest *not tested / needs review* states, PDF and CSV reports, hash-chained audit log |
 
-## ✨ Features
+## Features
 
-- 🔏 **Authorization as code**: signed scope, Governor on every request, IP pinning, kill switch.
-- 🧾 **Low false-alarm design**: quote check, replay, canaries, impact caps, adversarial verifier, human calibration.
-- 🧬 **Whole AI stack**: prompts, agents, RAG documents, tool use, vector stores, model files, privacy leakage.
-- 🎢 **Adaptive and multi-turn**: attacker agent, Crescendo, rule-based branching, campaigns, PLAGUE, PersonaTeaming.
-- 📊 **Compliance views**: OWASP LLM 2025, Agentic (ASI) 2026, MITRE ATLAS, NIST AI RMF, AISVS, HarmBench / JailbreakBench / StrongREJECT ASR.
-- 🚦 **CI/CD gate**: scoped, expiring API tokens; incomplete scans never pass.
+- **Authorization as code**: signed scope, Governor on every request, IP pinning, kill switch.
+- **Low false-alarm design**: quote check, replay, canaries, impact caps, adversarial verifier, human calibration.
+- **Whole AI stack**: prompts, agents, RAG documents, tool use, vector stores, model files, privacy leakage.
+- **Adaptive and multi-turn**: attacker agent, Crescendo, rule-based branching, campaigns, PLAGUE, PersonaTeaming.
+- **Compliance views**: OWASP LLM 2025, Agentic (ASI) 2026, MITRE ATLAS, NIST AI RMF, AISVS, HarmBench / JailbreakBench / StrongREJECT ASR.
+- **CI/CD gate**: scoped, expiring API tokens; incomplete scans never pass.
 
 <details>
 <summary><b>All capabilities (30+)</b></summary>
 
-| | Capability | What you get |
-|---|---|---|
-| 🛡️ | **Defense efficacy** | Same library against `guardrail_off` and `guardrail_on` endpoints; per-vector *blocked / bypassed / regression*, **Defense Score** with 95% Wilson interval |
-| 🧠 | **Reasoning-layer evaluation** | `reasoning_chain` cases check every intermediate answer with code rules; **Reasoning Deviation** shown as a step-by-step timeline |
-| 📦 | **Sandboxed verification** | Opt-in isolated runner (no network, read-only, no capabilities) labels unsafe output `verified_exploitable` or `not_exploitable`; shell is never executed |
-| 🎚️ | **Accuracy layer** | Judge bias control, impact matrix that caps severity, adversarial verifier, human review with precision / recall calibration |
-| 🛡️ | **OWASP LLM Top 10 (2025)** | Starter kit (10 templates), coverage matrix, compliance score, one-click scans, legacy-id mapping |
-| 🧭 | **Compliance Suite** | One set of results seen through **OWASP Agentic (ASI) 2026**, **MITRE ATLAS** (threat matrix, per-finding badges), **NIST AI RMF** (Measure / Manage) and **OWASP AISVS** (chapter level); "test only AISVS-mapped cases" runs |
-| 📊 | **Benchmark datasets and ASR** | Import **HarmBench, JailbreakBench and StrongREJECT** files from your own copy; results are reported as Attack Success Rate (ASR) per benchmark |
-| 🖼️ | **Multimodal carrier** | Image or audio files from your library are attached to a message and only carried; before sending, OCR and metadata are read and the file is withheld if one of your canaries is inside |
-| ⛓️ | **Agentic tool chains** | Scripted multi-step scenarios on the fake tool sandbox: each step's message may quote what an earlier tool returned; a forbidden call or protected data reaching an outbound tool is a deterministic **critical** finding |
-| 🗺️ | **Knowledge Graph & Coverage Mapper** | A question tree you write is asked of the target; the knowledge tree and per-topic coverage are built from the replies in code; protected terms that leak become verified findings. Exploration and reporting only |
-| 🪜 | **Multi-session campaigns** | A "patient" run over several sessions on a ladder of your cases; the planner is plain code (escalate, retry, step back, stop) and keeps only counters, never target text |
-| 🧬 | **PLAGUE and PersonaTeaming** | Adaptive methods with a planning / reflecting state machine and a per-run lifelong memory; every strategy and persona is written by you in the library |
-| 🤖 | **Adaptive Attacker agent** | State machine (probe → analyze → generate → validate → attack → confirm); rewrites refused cases in operator-allowed families; scope-gated and budgeted |
-| 🌳 | **Attack tree** | Interactive graph of what the agent tried, why it moved on, how the verdict was reached |
-| 🛠️ | **Remediator** | Reviewable secure prompt / code patch per finding, secrets masked, never auto-applied |
-| ⚖️ | **Model benchmarking** | Same test set to 2-4 targets of one scope; per-category failure rates and ranking |
-| 🔧 | **Tool sandbox** | Fake `read_file` / `query_db` / `http_request` tools with canned results (nothing executes); a forbidden call or a secret passed to an outbound tool is a deterministic **Critical** |
-| 🎢 | **Crescendo conversations** | 5-10 turn scenarios whose later turns quote the target's previous reply (`{previous_reply}`); per-turn stage in the evidence |
-| 📥 | **Payload library import** | Bring your own `.txt` / JSON / JSONL / CSV / YAML / AltayDuel files; payloads stay verbatim carriers tagged with an **attack family** (instruction override, role play, encoding evasion, payload splitting, memory poisoning, tool abuse, exfiltration) that fills the ATLAS and Agentic mapping |
-| 🔀 | **Rule-based multi-turn branching** | The code picks the next library message from the target's reply with the case's own rule table (forward-only, scope-gated by `branching_allowed`); the path is shown in the finding |
-| 🖼️ | **Markdown exfiltration detector** | Canary inside an image, link, HTML `src/href` or bare URL (also percent/base64-encoded) is a **High** leak |
-| 📄 | **Document ingestion (RAG)** | Library text rendered to visible PDF / DOCX / HTML / MD / CSV / TXT, uploaded, cleaned up; per-conversation canary tokens |
-| 🔀 | **Defense-bypass transforms** | `base64`, `rot13`, `hex`, `homoglyph`, `split`, `language_switch`; wording templates come from the library |
-| 📦 | **Model supply chain** | Static pickle/zip/safetensors/GGUF analysis: never loads or executes the file; hash verification |
-| 🗄️ | **Vector DB exposure** | Read-only, credential-less probes of Chroma, Qdrant, Weaviate; masked previews; 3 records per collection |
-| 🧪 | **Model extraction exposure** | Budgeted query harvest; cost estimate, throttling, repeatability, lookup-surrogate fidelity (nothing is trained) |
-| 🕵️ | **Membership inference signal** | Member vs. control continuation test with AUC and optional log-probs; hashes only, no sample text stored |
-| 🔁 | **CI/CD gate** | `POST /api/scan-ci` with a revocable, expiring, scope-bound token; incomplete scans never pass |
-| 🎯 | **Targets and auth types** | Save targets once (OpenAI, Anthropic, Ollama or any OpenAI-compatible URL); authenticate with an API key, a **browser cookie string** or a **custom header**; credentials are kept in server memory only |
-| ⚡ | **Quick scan** | Enter a URL and credentials, review exactly what will be signed, tick the authorization box: one run covers the OWASP kit, Crescendo and Markdown-leak checks (plus tool abuse if you attest) |
-| 📥 | **Drag-and-drop uploads** | Drop a PDF, DOCX or EML (only its visible text is extracted and re-created) or a JSON/YAML test library |
-| 🔐 | **Governance** | Signed scope, RBAC (viewer / operator / admin), hash-chained audit, kill switch |
+| Capability | What you get |
+|---|---|
+| **Defense efficacy** | Same library against `guardrail_off` and `guardrail_on` endpoints; per-vector *blocked / bypassed / regression*, **Defense Score** with 95% Wilson interval |
+| **Reasoning-layer evaluation** | `reasoning_chain` cases check every intermediate answer with code rules; **Reasoning Deviation** shown as a step-by-step timeline |
+| **Sandboxed verification** | Opt-in isolated runner (no network, read-only, no capabilities) labels unsafe output `verified_exploitable` or `not_exploitable`; shell is never executed |
+| **Accuracy layer** | Judge bias control, impact matrix that caps severity, adversarial verifier, human review with precision / recall calibration |
+| **OWASP LLM Top 10 (2025)** | Starter kit (10 templates), coverage matrix, compliance score, one-click scans, legacy-id mapping |
+| **Compliance Suite** | One set of results seen through **OWASP Agentic (ASI) 2026**, **MITRE ATLAS** (threat matrix, per-finding badges), **NIST AI RMF** (Measure / Manage) and **OWASP AISVS** (chapter level); "test only AISVS-mapped cases" runs |
+| **Benchmark datasets and ASR** | Import **HarmBench, JailbreakBench and StrongREJECT** files from your own copy; results are reported as Attack Success Rate (ASR) per benchmark |
+| **Multimodal carrier** | Image or audio files from your library are attached to a message and only carried; before sending, OCR and metadata are read and the file is withheld if one of your canaries is inside |
+| **Agentic tool chains** | Scripted multi-step scenarios on the fake tool sandbox: each step's message may quote what an earlier tool returned; a forbidden call or protected data reaching an outbound tool is a deterministic **critical** finding |
+| **Knowledge Graph & Coverage Mapper** | A question tree you write is asked of the target; the knowledge tree and per-topic coverage are built from the replies in code; protected terms that leak become verified findings. Exploration and reporting only |
+| **Multi-session campaigns** | A "patient" run over several sessions on a ladder of your cases; the planner is plain code (escalate, retry, step back, stop) and keeps only counters, never target text |
+| **PLAGUE and PersonaTeaming** | Adaptive methods with a planning / reflecting state machine and a per-run lifelong memory; every strategy and persona is written by you in the library |
+| **Adaptive Attacker agent** | State machine (probe → analyze → generate → validate → attack → confirm); rewrites refused cases in operator-allowed families; scope-gated and budgeted |
+| **Attack tree** | Interactive graph of what the agent tried, why it moved on, how the verdict was reached |
+| **Remediator** | Reviewable secure prompt / code patch per finding, secrets masked, never auto-applied |
+| **Model benchmarking** | Same test set to 2-4 targets of one scope; per-category failure rates and ranking |
+| **Tool sandbox** | Fake `read_file` / `query_db` / `http_request` tools with canned results (nothing executes); a forbidden call or a secret passed to an outbound tool is a deterministic **Critical** |
+| **Crescendo conversations** | 5-10 turn scenarios whose later turns quote the target's previous reply (`{previous_reply}`); per-turn stage in the evidence |
+| **Payload library import** | Bring your own `.txt` / JSON / JSONL / CSV / YAML / AltayDuel files; payloads stay verbatim carriers tagged with an **attack family** (instruction override, role play, encoding evasion, payload splitting, memory poisoning, tool abuse, exfiltration) that fills the ATLAS and Agentic mapping |
+| **Rule-based multi-turn branching** | The code picks the next library message from the target's reply with the case's own rule table (forward-only, scope-gated by `branching_allowed`); the path is shown in the finding |
+| **Markdown exfiltration detector** | Canary inside an image, link, HTML `src/href` or bare URL (also percent/base64-encoded) is a **High** leak |
+| **Document ingestion (RAG)** | Library text rendered to visible PDF / DOCX / HTML / MD / CSV / TXT, uploaded, cleaned up; per-conversation canary tokens |
+| **Defense-bypass transforms** | `base64`, `rot13`, `hex`, `homoglyph`, `split`, `language_switch`; wording templates come from the library |
+| **Model supply chain** | Static pickle/zip/safetensors/GGUF analysis: never loads or executes the file; hash verification |
+| **Vector DB exposure** | Read-only, credential-less probes of Chroma, Qdrant, Weaviate; masked previews; 3 records per collection |
+| **Model extraction exposure** | Budgeted query harvest; cost estimate, throttling, repeatability, lookup-surrogate fidelity (nothing is trained) |
+| **Membership inference signal** | Member vs. control continuation test with AUC and optional log-probs; hashes only, no sample text stored |
+| **CI/CD gate** | `POST /api/scan-ci` with a revocable, expiring, scope-bound token; incomplete scans never pass |
+| **Targets and auth types** | Save targets once (OpenAI, Anthropic, Ollama or any OpenAI-compatible URL); authenticate with an API key, a **browser cookie string** or a **custom header**; credentials are kept in server memory only |
+| **Quick scan** | Enter a URL and credentials, review exactly what will be signed, tick the authorization box: one run covers the OWASP kit, Crescendo and Markdown-leak checks (plus tool abuse if you attest) |
+| **Drag-and-drop uploads** | Drop a PDF, DOCX or EML (only its visible text is extracted and re-created) or a JSON/YAML test library |
+| **Governance** | Signed scope, RBAC (viewer / operator / admin), hash-chained audit, kill switch |
 
 </details>
 
-| Attack tree | Remediator (Fix tab) |
-|---|---|
-| ![Attack tree](docs/screenshots/attack-tree.png) | ![Remediator](docs/screenshots/remediator-fix.png) |
+<table>
+<tr>
+<th width="50%">Attack tree</th>
+<th width="50%">Remediator (Fix tab)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/attack-tree.png" alt="Attack tree" width="100%"></td>
+<td><img src="docs/screenshots/remediator-fix.png" alt="Remediator" width="100%"></td>
+</tr>
+</table>
 
-| Quick scan: review before signing | Targets with cookie authentication |
-|---|---|
-| ![Quick scan](docs/screenshots/quick-scan-plan.png) | ![Targets](docs/screenshots/targets-list.png) |
+<table>
+<tr>
+<th width="50%">Quick scan: review before signing</th>
+<th width="50%">Targets with cookie authentication</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/quick-scan-plan.png" alt="Quick scan" width="100%"></td>
+<td><img src="docs/screenshots/targets-list.png" alt="Targets" width="100%"></td>
+</tr>
+</table>
 
-| Tool sandbox finding (Critical) | Vector store exposure |
-|---|---|
-| ![Tool sandbox](docs/screenshots/tool-sandbox.png) | ![Vector store](docs/screenshots/privacy-vector.png) |
+<table>
+<tr>
+<th width="50%">Tool sandbox finding (Critical)</th>
+<th width="50%">Vector store exposure</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/tool-sandbox.png" alt="Tool sandbox" width="100%"></td>
+<td><img src="docs/screenshots/privacy-vector.png" alt="Vector store" width="100%"></td>
+</tr>
+</table>
 
-| Model benchmark | OWASP LLM Top 10 matrix |
-|---|---|
-| ![Model benchmark](docs/screenshots/model-benchmark.png) | ![OWASP matrix](docs/screenshots/owasp-matrix.png) |
+<table>
+<tr>
+<th width="50%">Model benchmark</th>
+<th width="50%">OWASP LLM Top 10 matrix</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/model-benchmark.png" alt="Model benchmark" width="100%"></td>
+<td><img src="docs/screenshots/owasp-matrix.png" alt="OWASP matrix" width="100%"></td>
+</tr>
+</table>
 
 *The screenshots use a local deterministic mock target and mock helper models (see `sandbox/`), not real models.*
-## 🧭 Where AIVeritX fits
+## Where AIVeritX fits
 
 Each of these tools is good at something different. AIVeritX is built for teams who need **authorized, reproducible and auditable** results rather than the largest probe count.
 
@@ -195,7 +249,7 @@ Each of these tools is good at something different. AIVeritX is built for teams 
 
 They combine well: bring payloads from other projects with the importer and let AIVeritX run them under a scope and verify the findings.
 
-## 🚀 Setup in detail
+## Setup in detail
 
 **Requirements:** Docker with Compose v2.
 
@@ -231,7 +285,7 @@ Restart after editing `.env`: `docker compose up -d`. **Back up `AIVERITX_SCOPE_
 
 **Try it without any API key (local development setup).** The repository ships a deterministic fake target and judge. Start the backend and UI as described in [Development](#development-without-docker), then `python sandbox/mock_llm.py --port 9100` and set *Settings → Judge* to provider `openai_compat`, URL `http://127.0.0.1:9100/judge/v1/chat/completions`, model `mock-judge`. Create a scope for `http://127.0.0.1:9100/v1/chat/completions` with **Local** ticked (the classes `tool_abuse` with the test-environment attestation, `system_prompt_extraction` and `data_leakage` cover the advanced examples), import the Advanced examples and run them: the mock target is vulnerable in exactly the advertised ways (enter `ACME-INTERNAL-KEY-48213` as a canary to see the Markdown check). The mock is test scaffolding, **not an LLM**.
 
-## 🔄 How a test runs
+## How a test runs
 
 ```mermaid
 flowchart LR
@@ -353,7 +407,7 @@ stateDiagram-v2
 
 The agent loop is optional, off by default and allowed only by the signed scope. Every state change is appended to an audit trail (`agent_steps`).
 
-## 🔐 Security & architecture
+## Security & architecture
 
 > **Design principle:** the safety controls live outside the model. Scope, limits, network addresses and permissions are enforced in code; every piece of text coming from the target or the judge is treated as *untrusted data*. Even if the model is "persuaded", an out-of-scope request is never sent and a finding without evidence is never created.
 
@@ -409,9 +463,16 @@ If there is no password and no user, the server refuses the API with **503** (fa
 4. **Test Library → Ready-made templates:** import the OWASP starter kit, the **Advanced examples** (tool sandbox, Crescendo, Markdown leak) or upload your own JSON/YAML library.
 5. **OWASP Compliance → Start OWASP scan** (or the **New Test** wizard). Watch the run live; **Findings** and the PDF/CSV reports are ready.
 
-| Ready-made templates | OWASP scan dialog |
-|---|---|
-| ![Ready-made templates](docs/e2e-run/21-library-templates.png) | ![Scan dialog](docs/e2e-run/22-owasp-scan-dialog.png) |
+<table>
+<tr>
+<th width="50%">Ready-made templates</th>
+<th width="50%">OWASP scan dialog</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/library-templates.png" alt="Ready-made templates" width="100%"></td>
+<td><img src="docs/screenshots/owasp-scan-dialog.png" alt="Scan dialog" width="100%"></td>
+</tr>
+</table>
 
 ## OWASP LLM Top 10 compliance
 
@@ -426,9 +487,16 @@ Test library cases carry an `owasp_category` (`LLM01_PromptInjection` … `LLM10
 > **This is not a compliance certificate.** The results map **behavioral quality probes** made through a black-box API to OWASP categories.
 > LLM03 (supply chain), LLM04 (data/model poisoning) and LLM08 (vector/embedding) are only **partially** covered by black-box testing; a full assessment needs an architecture and process review. This warning also appears in the UI and in the reports.
 
-| OWASP matrix | Findings by category |
-|---|---|
-| ![OWASP matrix](docs/e2e-run/25-owasp-matrix.png) | ![Findings](docs/e2e-run/27-findings-owasp-filter.png) |
+<table>
+<tr>
+<th width="50%">OWASP matrix</th>
+<th width="50%">Findings by category</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/owasp-matrix.png" alt="OWASP matrix" width="100%"></td>
+<td><img src="docs/screenshots/findings-owasp-filter.png" alt="Findings" width="100%"></td>
+</tr>
+</table>
 
 ## Compliance Suite (ASI, ATLAS, NIST AI RMF, AISVS, benchmarks)
 
@@ -448,17 +516,38 @@ The **Compliance** pages show the same test evidence through several frameworks.
 - **Agentic examples:** `ADV_agentic` (identity spoofing through a claimed orchestrator message and a claimed administrator, plan replacement; fake tools, nothing executes) and `ADV_plague_persona` are in *Library → Advanced examples*. They are not part of the quick scan.
 - **PLAGUE / PersonaTeaming:** an `adaptive` block can set `"method": "plague"` with `strategies: [{id, text}]` or `"method": "persona_teaming"` with `personas: [{id, text}]` (1-8 items, 600 characters each). The engine plans (picks the next item from a per-run memory of tries, refusals and violations), the Attacker model rewrites the case following that text, and the result goes through the usual scope limits, Governor, judge and replay. Needs adaptive mode in the signed scope; the scope's round cap applies.
 
-| MITRE ATLAS threat matrix | Agentic (ASI) 2026 matrix |
-|---|---|
-| ![ATLAS](docs/screenshots/compliance-atlas.png) | ![ASI](docs/screenshots/owasp-agentic.png) |
+<table>
+<tr>
+<th width="50%">MITRE ATLAS threat matrix</th>
+<th width="50%">Agentic (ASI) 2026 matrix</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/compliance-atlas.png" alt="ATLAS" width="100%"></td>
+<td><img src="docs/screenshots/owasp-agentic.png" alt="ASI" width="100%"></td>
+</tr>
+</table>
 
-| OWASP AISVS chapters | Benchmark score (ASR) |
-|---|---|
-| ![AISVS](docs/screenshots/compliance-aisvs.png) | ![ASR](docs/screenshots/compliance-benchmark-asr.png) |
+<table>
+<tr>
+<th width="50%">OWASP AISVS chapters</th>
+<th width="50%">Benchmark score (ASR)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/compliance-aisvs.png" alt="AISVS" width="100%"></td>
+<td><img src="docs/screenshots/compliance-benchmark-asr.png" alt="ASR" width="100%"></td>
+</tr>
+</table>
 
-| Benchmark dataset import (Library) | Attack families (Compliance Suite) |
-|---|---|
-| ![Benchmark import](docs/screenshots/benchmark-import.png) | ![Attack families](docs/screenshots/compliance-families.png) |
+<table>
+<tr>
+<th width="50%">Benchmark dataset import (Library)</th>
+<th width="50%">Attack families (Compliance Suite)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/benchmark-import.png" alt="Benchmark import" width="100%"></td>
+<td><img src="docs/screenshots/compliance-families.png" alt="Attack families" width="100%"></td>
+</tr>
+</table>
 
 *These screenshots come from the local deterministic mock target, which refused both imported benchmark prompts. That is why the ASR shows 0.0% and the ATLAS row for LLM Jailbreak shows "Clean". The mock does not trigger every badge (for example a finding with an ATLAS badge); the mapping itself is covered by the backend tests.*
 
@@ -481,13 +570,27 @@ Four example libraries are in *Library → Advanced examples* (`ADV_multimodal`,
 - **What the platform does not do here.** It does not write attack text, create or edit images, transcribe audio, or choose attacks by itself: the "attack path" is the order you put in the library, the plan only picks among your cases.
 - **OCR** needs the `tesseract` program (the Docker image installs it). Without it files are still carried, but the OCR text and the OCR part of the canary check are skipped; the page shows "OCR engine: not installed".
 
-| Multimodal carrier | Agentic tool chain |
-|---|---|
-| ![Multimodal](docs/screenshots/suite-multimodal.png) | ![Chain](docs/screenshots/suite-chain.png) |
+<table>
+<tr>
+<th width="50%">Multimodal carrier</th>
+<th width="50%">Agentic tool chain</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/suite-multimodal.png" alt="Multimodal" width="100%"></td>
+<td><img src="docs/screenshots/suite-chain.png" alt="Chain" width="100%"></td>
+</tr>
+</table>
 
-| Knowledge map | Multi-session campaign |
-|---|---|
-| ![Knowledge map](docs/screenshots/suite-knowledge.png) | ![Campaign](docs/screenshots/suite-campaign.png) |
+<table>
+<tr>
+<th width="50%">Knowledge map</th>
+<th width="50%">Multi-session campaign</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/suite-knowledge.png" alt="Knowledge map" width="100%"></td>
+<td><img src="docs/screenshots/suite-campaign.png" alt="Campaign" width="100%"></td>
+</tr>
+</table>
 
 *Screenshots come from the deterministic mock target (the agent reads a file and sends it to an outbound tool on purpose, the campaign ladder is refused, clean, then leaks).*
 
@@ -540,13 +643,25 @@ Rows that are empty, longer than 3,500 characters, duplicates, or that contain t
 
 Conditions: `contains`, `not_contains` (case-insensitive substrings), `refused` (a generic refusal-wording check), `min_chars`, `max_chars`, `canary` (an operator canary appears in the reply). **Branches only go forward**, so a case cannot loop and its longest path is its step count (checked against the scope's turn limit). State (current step, turn counter, path) is kept by the engine in plain variables; the finding shows the path as *Branching path* chips (`via rule 2` / `via default`). A branching case needs **`branching_allowed`** in the signed scope (off by default, shown on the approval screen; the Governor also refuses it with `BRANCHING_NOT_ALLOWED`). It cannot be combined with `crescendo`, `variants` or a bypass technique.
 
-| Library: external payload import | Finding: family badges and branching path |
-|---|---|
-| ![Payload import](docs/screenshots/library-payload-import.png) | ![Branching finding](docs/screenshots/finding-branching.png) |
+<table>
+<tr>
+<th width="50%">Library: external payload import</th>
+<th width="50%">Finding: family badges and branching path</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/library-payload-import.png" alt="Payload import" width="100%"></td>
+<td><img src="docs/screenshots/finding-branching.png" alt="Branching finding" width="100%"></td>
+</tr>
+</table>
 
-| Scopes: the `branching_allowed` grant (badge "Multi-turn branching") |
-|---|
-| ![Scopes](docs/screenshots/scopes-branching-grant.png) |
+<table>
+<tr>
+<th width="100%">Scopes: the `branching_allowed` grant (badge &quot;Multi-turn branching&quot;)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/scopes-branching-grant.png" alt="Scopes" width="100%"></td>
+</tr>
+</table>
 
 *These screenshots come from the isolated E2E run against the deterministic mock target (the payload text is the E2E's own harmless marker text; sandbox client and scope names are test data).*
 
@@ -563,8 +678,16 @@ False alarms are the main way a red-team tool loses trust. Four mechanisms work 
 | **Adversarial verifier** (*Settings → Adversarial verifier*) | After a finding is replay-confirmed, a second model is asked to *refute* it. A refutation is accepted only with an allowed argument type, a reason, a **verbatim quote** from the response or the sent messages, and confidence above the threshold (default 0.8). Accepted: status `false_positive` (kept for audit, excluded from reports, scores and CI gates). Findings proven by code (sandbox rule, canary, protected term, exfil URL) are never sent to it, and a verifier error never loses a finding. |
 | **Human review and calibration** (*Findings → card → Review*) | Mark a finding **True positive** or **False positive** (operator role), with a note. A false positive leaves reports and scores; a true positive restores a finding the system held back. The system's own decision is kept (`system_status`) so precision and recall can be measured: *precision = TP / (TP + FP)* over reported findings, *recall = TP / (TP + FN)* over the candidates the system surfaced, with 95% Wilson intervals, per-category tables, the verifier's accuracy and a confidence-threshold suggestion. The Findings page, Settings and the PDF show them. Nothing changes automatically: a suggested threshold is applied only when you press Save. |
 
-| ![Bias control](docs/screenshots/accuracy-bias-control.png) | ![Calibration](docs/screenshots/accuracy-calibration.png) |
-|---|---|
+<table>
+<tr>
+<th width="50%">Bias control</th>
+<th width="50%">Detection quality (calibration)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/accuracy-bias-control.png" alt="Bias control" width="100%"></td>
+<td><img src="docs/screenshots/accuracy-calibration.png" alt="Calibration" width="100%"></td>
+</tr>
+</table>
 | *Settings → Bias control:* same-model warning per target and independent-judge suggestions | *Calibration panel:* precision / recall with 95% intervals (screenshot taken with 5 simulated test labels: 3 true, 2 false positives) |
 
 ![Evidence and impact, verifier verdict and human review](docs/screenshots/accuracy-impact-review.png)
@@ -706,7 +829,7 @@ LICENSE             GNU AGPL-3.0
 _archive/           Earlier (web/network based) work - not part of the running project (not added to version control)
 ```
 
-## 🤝 Contributing
+## Contributing
 
 **AIVeritX gets better with every person who uses it. Come join the community.**
 
@@ -723,7 +846,7 @@ Keep the design rules: the engine holds no attack content (it lives in the libra
 
 <a id="legal-disclaimer"></a>
 
-## ⚖️ Legal disclaimer and responsible use
+## Legal disclaimer and responsible use
 
 AIVeritX sends adversarial prompts to the systems it tests. **It is intended for legal, authorized security testing only.**
 
@@ -734,7 +857,7 @@ AIVeritX sends adversarial prompts to the systems it tests. **It is intended for
 
 Using AIVeritX for unauthorized access, attacks on systems you do not have permission to test, or any other illegal purpose is strictly prohibited. This section is not legal advice.
 
-## ⭐ Support
+## Support
 
 If AIVeritX saves you time or catches something real, a star helps other security teams find it.
 
