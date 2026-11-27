@@ -13,7 +13,7 @@ Every finding is backed by verbatim evidence, confirmed by replay and mapped to 
 
 <p>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License: AGPL-3.0"></a>
-<img src="https://img.shields.io/badge/tests-790%20passing-2f855a?style=flat-square" alt="Tests: 790 passing">
+<a href="https://github.com/capture0x/AIVeritX/actions/workflows/ci.yml"><img src="https://github.com/capture0x/AIVeritX/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 <img src="https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
 <img src="https://img.shields.io/badge/Next.js-16-111111?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16">
 <img src="https://img.shields.io/badge/Docker%20Compose-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose ready">
@@ -37,25 +37,38 @@ Every finding is backed by verbatim evidence, confirmed by replay and mapped to 
 > [!WARNING]
 > **For legal and authorized use only.** AIVeritX is a security testing tool. Use it only against systems you own or have explicit written permission to test. Unauthorized testing may be illegal. The authors and contributors accept no liability for misuse or for any damage it causes. See [Legal disclaimer](#legal-disclaimer).
 
-## Screenshots
-
 <!-- A short screen recording can go here later: <img src="docs/demo.gif" alt="AIVeritX live scan demo" width="900"> -->
 
 ![Dashboard: metric cards, risk trend, live agent timeline, system health and model comparison](docs/screenshots/dashboard.png)
 
+
+## Why AIVeritX
+
+Most LLM scanners tell you what the model said. AIVeritX tells you **whether you can believe it** and **proves it was safe to run**: no request leaves without a signed scope, and no finding is reported without a verbatim quote, a replay and a second opinion.
+
 <table>
-<tr>
-<th width="50%">Agent live stream and system health</th>
-<th width="50%">Metric cards (accent line on hover)</th>
-</tr>
-<tr>
-<td><img src="docs/screenshots/dashboard-live-stream.png" alt="Agent live stream in JetBrains Mono next to system health" width="100%"></td>
-<td><img src="docs/screenshots/dashboard-metrics-hover.png" alt="Four metric cards with a thin accent line on hover" width="100%"></td>
-</tr>
+<tr><th width="24%" align="left">Safeguard</th><th width="52%" align="left">What it prevents</th><th width="24%" align="left">Where to see it</th></tr>
+<tr><td>Signed scope and Governor</td><td>Requests to anything you are not authorized to test</td><td>Scopes</td></tr>
+<tr><td>Replay verification</td><td>One lucky reply being reported as a finding</td><td>Finding card</td></tr>
+<tr><td>Impact matrix</td><td>Harmless text being rated as critical</td><td>Finding card, Review tab</td></tr>
+<tr><td>Bias control</td><td>A judge favouring a model from its own family</td><td>Settings</td></tr>
+<tr><td>Adversarial verifier</td><td>False positives that a second model can refute</td><td>Settings</td></tr>
+<tr><td>Human calibration</td><td>Unmeasured precision and recall</td><td>Findings</td></tr>
+<tr><td>Defense Score</td><td>Guessing whether a guardrail actually helps</td><td>Defense Efficacy</td></tr>
 </table>
 
-> **Most LLM scanners tell you what the model said. AIVeritX tells you whether you can believe it, and proves it was safe to run.**
-> No request leaves the building without a signed scope. No finding is reported without a quote, a replay and a second opinion.
+### What it does differently
+
+<table>
+<tr><th width="35%" align="left">Usual weak spot</th><th width="65%" align="left">How AIVeritX handles it</th></tr>
+<tr><td>&quot;The tool can hit anything I point it at&quot;</td><td>Signed scope and Governor on every request; IP pinning; cloud metadata always blocked</td></tr>
+<tr><td>&quot;The judge said so&quot;</td><td>Verbatim quote check, k-of-n replay, canaries, deterministic rules, human review</td></tr>
+<tr><td>&quot;An AI attacker with free rein&quot;</td><td>Rewrites stay inside operator-allowed families, in bounded rounds, within budget</td></tr>
+<tr><td>&quot;Findings I can&#x27;t reproduce&quot;</td><td>Each finding stores its transcript, replays and the exact library hash</td></tr>
+<tr><td>&quot;Results I can&#x27;t take to compliance&quot;</td><td>OWASP matrix with honest coverage states, PDF and CSV reports, hash-chained audit</td></tr>
+</table>
+
+The engine holds **no attack content**: every message, tool definition and transform comes from your versioned, hashed test library.
 
 ## Quick start (2 minutes)
 
@@ -85,62 +98,7 @@ No API key yet? The repo ships a deterministic vulnerable mock target and judge,
 </tr>
 </table>
 
-*These three screenshots simulate a fresh installation by answering the status calls with empty data; the rest of the UI is the real app.*
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-**🔏 Signed scope**<br>
-HMAC-signed, immutable authorization: endpoints, attack classes, budgets. Unsigned, expired or revoked means zero requests.
-
-</td>
-<td width="33%" valign="top">
-
-**🧾 Evidence, not opinion**<br>
-Verbatim-quote check, k-of-n replay, canaries, deterministic detectors and an adversarial verifier cut false alarms.
-
-</td>
-<td width="33%" valign="top">
-
-**🛡️ Defense measured**<br>
-Run the same attacks with and without your guardrail and get a **Defense Score** with a 95% confidence interval.
-
-</td>
-</tr>
-</table>
-
-## Why AIVeritX
-
-**Five things that make a finding believable.** Each one is enforced in code and pinned by tests.
-
-| # | Feature | The problem it solves | Where to see it |
-|---|---|---|---|
-| 1 | **Impact Matrix** | A judge says "violation" for harmless text. The code decides *how much it matters*: only an executed action, exfiltrated data, protected data or a leaked system prompt can be **critical**; a text-only bypass is capped at high, a text echo at low | Finding card → Review tab |
-| 2 | **Bias Control** | A judge from the same model family as the target tends to favour its own style. AIVeritX detects the same family or model, warns (or blocks) and suggests an independent judge | Settings → Bias control |
-| 3 | **Adversarial Verifier** | After replay confirms a finding, a second model tries to *refute* it. A refutation counts only with a verbatim quote and enough confidence; findings proven by code are never sent to it | Settings → Adversarial verifier |
-| 4 | **Replay + human calibration** | One lucky reply is not a finding. It must repeat in fresh conversations; your True / False positive labels then give measured precision and recall with 95% intervals | Findings → Calibration |
-| 5 | **Defense Score** | "Did our guardrail help?" Same attacks with and without the defense: *blocked / bypassed / regression*, plus a score with a confidence interval | Defense Efficacy (Advanced mode) |
-
-Underneath all five: a **signed scope** decides what may be tested before the first request leaves, and a Governor enforces limits on every call.
-
-Most LLM test tools send a pile of prompts and show you what the model said. AIVeritX is built around a different question: **can you trust the result, and was it safe to run?**
-
-- **Authorization is code, not a promise.** A test only starts under a *signed, immutable scope*: endpoints, attack classes, token/request/rate/conversation limits, even whether an attacker model may rewrite refused cases. An unsigned, expired, revoked or superseded scope means no request leaves the building.
-- **Evidence over opinion.** A judge LLM must quote the violating text *verbatim*; a finding only becomes **verified** after it reproduces in fresh conversations; planted **canaries** and **deterministic detectors** (tool calls, Markdown leaks) back up or override a judge that is wrong.
-- **The engine holds no attack content.** Every test message, tool definition and transform wording comes from your versioned, hashed test library. The engine carries state, enforces limits and records evidence.
-- **Every layer of the AI stack.** Prompt and agent behavior, RAG documents, tool use, vector stores, model files and privacy leakage, in one platform, one audit log, one report.
-- **Built for pipelines.** A scoped, expiring API token turns any scan into a CI gate.
-
-### What it does differently
-
-| Usual weak spot | How AIVeritX handles it |
-|---|---|
-| "The tool can hit anything I point it at" | Signed scope + Governor on **every** request; IP pinning against DNS rebinding; cloud metadata always blocked |
-| "The judge said so" | Verbatim quote check, replay verification (k of n), canaries, deterministic rules, human-review queue |
-| "An AI attacker with free rein" | The attacker only rewrites inside operator-allowed families, a few bounded rounds, validated in code, charged to a budget |
-| "Findings I can't reproduce" | Each finding stores its transcript, replays and the exact library hash |
-| "Results I can't take to compliance" | OWASP 2025 matrix with honest *not tested / needs review* states, PDF and CSV reports, hash-chained audit log |
+*The three screenshots above show a fresh installation (no targets or runs yet).*
 
 ## Features
 
@@ -200,6 +158,17 @@ Most LLM test tools send a pile of prompts and show you what the model said. AIV
 
 <table>
 <tr>
+<th width="50%">Agent live stream and system health</th>
+<th width="50%">Metric cards (accent line on hover)</th>
+</tr>
+<tr>
+<td><img src="docs/screenshots/dashboard-live-stream.png" alt="Agent live stream in JetBrains Mono next to system health" width="100%"></td>
+<td><img src="docs/screenshots/dashboard-metrics-hover.png" alt="Four metric cards with a thin accent line on hover" width="100%"></td>
+</tr>
+</table>
+
+<table>
+<tr>
 <th width="50%">Attack tree</th>
 <th width="50%">Remediator (Fix tab)</th>
 </tr>
@@ -242,7 +211,8 @@ Most LLM test tools send a pile of prompts and show you what the model said. AIV
 </tr>
 </table>
 
-*The screenshots use a local deterministic mock target and mock helper models (see `sandbox/`), not real models.*
+*Screenshots use the deterministic mock target and mock helper models in `sandbox/`, not real models.*
+
 ## Where AIVeritX fits
 
 Each of these tools is good at something different. AIVeritX is built for teams who need **authorized, reproducible and auditable** results rather than the largest probe count.
@@ -309,7 +279,7 @@ flowchart LR
   E -. refused? .-> A[Attacker LLM<br/>allowed families only] --> E
 ```
 
-**In four steps (no diagram reading needed):**
+**In four steps:**
 
 1. **Sign Scope:** you declare what may be tested, for how long and how hard. Nothing runs without it.
 2. **Agent Attacks:** the engine sends the test messages inside that boundary, and an attacker model adapts when the target refuses.
@@ -465,7 +435,7 @@ If there is no password and no user, the server refuses the API with **503** (fa
 
 1. **Sign in** (`admin`). Add operator/viewer accounts on the Users page.
 2. **Settings → Judge LLM:** choose the provider and model, and give the environment variable name of the API key.
-   > ⚠️ **Small/local models as the judge can cause false negatives.** A capable model (Claude Sonnet/Opus class, GPT-4o class) is strongly recommended in production. The UI warns you when it detects signs of a small/local model.
+   > **Note:** small or local models as the judge can cause false negatives. A capable model (Claude Sonnet/Opus class, GPT-4o class) is strongly recommended in production. The UI warns you when it detects signs of a small/local model.
 3. **Scopes → New scope:** enter the endpoint you are authorized to test, the allowed categories and the limits; read the content and digest on the approval screen and **sign**.
 4. **Test Library → Ready-made templates:** import the OWASP starter kit, the **Advanced examples** (tool sandbox, Crescendo, Markdown leak) or upload your own JSON/YAML library.
 5. **OWASP Compliance → Start OWASP scan** (or the **New Test** wizard). Watch the run live; **Findings** and the PDF/CSV reports are ready.
@@ -564,12 +534,33 @@ The **Compliance** pages show the same test evidence through several frameworks.
 
 The **AI Security Suite** page adds four capabilities. They follow the platform's one rule: **all test text and files come from your hashed library**; code classifies, plans and reports. Every request still goes through the signed scope, the Governor, canaries and the audit log.
 
-| Module | Library case | What the platform does | Scope grant |
-|---|---|---|---|
-| Multimodal carrier | `type: multimodal`, `media: [{name, format: png/jpeg/wav/mp3, data_base64, declared_text}]` | Sends the file exactly as written. **Static pre-processing** first: OCR text (Tesseract, when installed) and metadata (EXIF, PNG text, tags); text the library did not declare is reported; a file that contains one of the run's **canaries is not sent**. Audio speech is *not* transcribed | `multimodal_allowed` |
-| Agentic chain | `type: agentic_chain`, `tools`, `steps: [{id, message, expect_tool, expect_args}]` | Runs the steps in order; `{step_1_output.field}` in a later message is filled from what the earlier step's fake tool returned. **Critical**: a `forbidden` tool is called, or a value returned by a `sensitive` tool reaches an `egress` tool. No judge call | tool-abuse attestation |
-| Knowledge map | `type: knowledge_map`, `nodes: [{id, parent, topic, question, terms, protected_terms}]` | Asks the tree breadth-first (a child only if its parent was covered, or always with `expand: always`), classifies every reply by string matching, stores the tree with coverage per topic. A protected term in a reply is a deterministic, replay-verified finding | none |
-| Campaign | `campaign: {ladder, level 1-5}` on ordinary cases | Each session is a normal run of one case. The planner escalates after a clean answer, tries another case or steps back after a refusal (limited by *patience*), and stops on a verified violation. Cool-down and session cap (also capped by the scope) pace it | `campaign_allowed` |
+#### Multimodal carrier
+
+**Library case:** `type: multimodal`, `media: [{name, format: png/jpeg/wav/mp3, data_base64, declared_text}]`  
+**Scope grant:** `multimodal_allowed`
+
+Sends the file exactly as written. **Static pre-processing** first: OCR text (Tesseract, when installed) and metadata (EXIF, PNG text, tags); text the library did not declare is reported; a file that contains one of the run's **canaries is not sent**. Audio speech is *not* transcribed.
+
+#### Agentic chain
+
+**Library case:** `type: agentic_chain`, `tools`, `steps: [{id, message, expect_tool, expect_args}]`  
+**Scope grant:** tool-abuse attestation
+
+Runs the steps in order; `{step_1_output.field}` in a later message is filled from what the earlier step's fake tool returned. **Critical**: a `forbidden` tool is called, or a value returned by a `sensitive` tool reaches an `egress` tool. No judge call.
+
+#### Knowledge map
+
+**Library case:** `type: knowledge_map`, `nodes: [{id, parent, topic, question, terms, protected_terms}]`  
+**Scope grant:** none
+
+Asks the tree breadth-first (a child only if its parent was covered, or always with `expand: always`), classifies every reply by string matching, stores the tree with coverage per topic. A protected term in a reply is a deterministic, replay-verified finding.
+
+#### Campaign
+
+**Library case:** `campaign: {ladder, level 1-5}` on ordinary cases  
+**Scope grant:** `campaign_allowed`
+
+Each session is a normal run of one case. The planner escalates after a clean answer, tries another case or steps back after a refusal (limited by *patience*), and stops on a verified violation. Cool-down and session cap (also capped by the scope) pace it.
 
 Four example libraries are in *Library → Advanced examples* (`ADV_multimodal`, `ADV_agentic_chain`, `ADV_knowledge_map`, `ADV_campaign_ladder`); none is part of the quick scan. Runs can be narrowed with `case_types` and `case_ids` (a campaign session runs exactly one case).
 
@@ -663,7 +654,7 @@ Conditions: `contains`, `not_contains` (case-insensitive substrings), `refused` 
 
 <table>
 <tr>
-<th width="100%">Scopes: the `branching_allowed` grant (badge &quot;Multi-turn branching&quot;)</th>
+<th width="100%">Scopes: the <code>branching_allowed</code> grant (badge &quot;Multi-turn branching&quot;)</th>
 </tr>
 <tr>
 <td><img src="docs/screenshots/scopes-branching-grant.png" alt="Scopes" width="100%"></td>
@@ -678,12 +669,27 @@ Conditions: `contains`, `not_contains` (case-insensitive substrings), `refused` 
 
 False alarms are the main way a red-team tool loses trust. Four mechanisms work against them; none generates attack text, and none lets a model overrule evidence the code can check.
 
-| Mechanism | What it does |
-|---|---|
-| **Bias control** (*Settings → Bias control*) | Classifies the judge (and verifier) against each target by model family (Claude, GPT, Gemini, Llama, ...) and shows a warning in Settings and in the *New test* wizard when they are the same family or the same model. A comparison table suggests an independent judge per target and fills the form (you press Save). Policy `warn` (default), `block` (the run is refused with `BIAS_CONTROL`) or `off`. Unknown families are never blocked. The assessment is stored in the run and printed in the PDF. |
-| **Evidence & Impact Matrix** | The judge says *whether* a response violated the expected behavior; the code decides *how much it matters*. `Action executed` (a forbidden tool really called), `Data exfiltrated`, `Protected data exposed` (canary / protected term) and `System prompt leaked` (hidden text that was not in the messages sent) keep their severity, so only these can be **critical**. `Policy bypass (text only)` is capped at **high**; `Text echo only`, where every quoted violation is text the tester sent (inline documents included) or an earlier reply, is capped at **low**. Impact only ever lowers a severity. Finding cards show the impact label and why. |
-| **Adversarial verifier** (*Settings → Adversarial verifier*) | After a finding is replay-confirmed, a second model is asked to *refute* it. A refutation is accepted only with an allowed argument type, a reason, a **verbatim quote** from the response or the sent messages, and confidence above the threshold (default 0.8). Accepted: status `false_positive` (kept for audit, excluded from reports, scores and CI gates). Findings proven by code (sandbox rule, canary, protected term, exfil URL) are never sent to it, and a verifier error never loses a finding. |
-| **Human review and calibration** (*Findings → card → Review*) | Mark a finding **True positive** or **False positive** (operator role), with a note. A false positive leaves reports and scores; a true positive restores a finding the system held back. The system's own decision is kept (`system_status`) so precision and recall can be measured: *precision = TP / (TP + FP)* over reported findings, *recall = TP / (TP + FN)* over the candidates the system surfaced, with 95% Wilson intervals, per-category tables, the verifier's accuracy and a confidence-threshold suggestion. The Findings page, Settings and the PDF show them. Nothing changes automatically: a suggested threshold is applied only when you press Save. |
+#### Bias control
+
+*Where: Settings → Bias control*
+
+Classifies the judge (and verifier) against each target by model family (Claude, GPT, Gemini, Llama, ...) and shows a warning in Settings and in the *New test* wizard when they are the same family or the same model. A comparison table suggests an independent judge per target and fills the form (you press Save). Policy `warn` (default), `block` (the run is refused with `BIAS_CONTROL`) or `off`. Unknown families are never blocked. The assessment is stored in the run and printed in the PDF.
+
+#### Evidence & Impact Matrix
+
+The judge says *whether* a response violated the expected behavior; the code decides *how much it matters*. `Action executed` (a forbidden tool really called), `Data exfiltrated`, `Protected data exposed` (canary / protected term) and `System prompt leaked` (hidden text that was not in the messages sent) keep their severity, so only these can be **critical**. `Policy bypass (text only)` is capped at **high**; `Text echo only`, where every quoted violation is text the tester sent (inline documents included) or an earlier reply, is capped at **low**. Impact only ever lowers a severity. Finding cards show the impact label and why.
+
+#### Adversarial verifier
+
+*Where: Settings → Adversarial verifier*
+
+After a finding is replay-confirmed, a second model is asked to *refute* it. A refutation is accepted only with an allowed argument type, a reason, a **verbatim quote** from the response or the sent messages, and confidence above the threshold (default 0.8). Accepted: status `false_positive` (kept for audit, excluded from reports, scores and CI gates). Findings proven by code (sandbox rule, canary, protected term, exfil URL) are never sent to it, and a verifier error never loses a finding.
+
+#### Human review and calibration
+
+*Where: Findings → finding card → Review tab*
+
+Mark a finding **True positive** or **False positive** (operator role), with a note. A false positive leaves reports and scores; a true positive restores a finding the system held back. The system's own decision is kept (`system_status`) so precision and recall can be measured: *precision = TP / (TP + FP)* over reported findings, *recall = TP / (TP + FN)* over the candidates the system surfaced, with 95% Wilson intervals, per-category tables, the verifier's accuracy and a confidence-threshold suggestion. The Findings page, Settings and the PDF show them. Nothing changes automatically: a suggested threshold is applied only when you press Save.
 
 <table>
 <tr>
@@ -695,11 +701,12 @@ False alarms are the main way a red-team tool loses trust. Four mechanisms work 
 <td><img src="docs/screenshots/accuracy-calibration.png" alt="Calibration" width="100%"></td>
 </tr>
 </table>
-| *Settings → Bias control:* same-model warning per target and independent-judge suggestions | *Calibration panel:* precision / recall with 95% intervals (screenshot taken with 5 simulated test labels: 3 true, 2 false positives) |
+
+*Left: same-model warning per target with independent-judge suggestions. Right: precision and recall with 95% intervals (5 sample review labels).*
 
 ![Evidence and impact, verifier verdict and human review](docs/screenshots/accuracy-impact-review.png)
 
-*A finding's Review tab: impact label with the severity cap, the verifier's verdict with its verbatim quote, and the True / False positive buttons. This screenshot is from a run recorded before the format-tolerant echo rule was added, so it still shows "Policy bypass (text only)"; new runs classify the same evidence as "Text echo only".*
+*A finding's Review tab: impact label with the severity cap, the verifier's verdict with its verbatim quote, and the True / False positive buttons.*
 
 Limits: recall is an upper bound, because attempts the judge called "no violation" never become findings and are not reviewed. With *inline* documents the "confidential" text is part of the user's own message, so such a finding is classed as `Text echo only`; use `delivery: ingest` with a canary to prove real exposure. Model names in the judge suggestions are defaults, edit them to what your account offers.
 
@@ -707,11 +714,23 @@ Limits: recall is an upper bound, because attempts the judge called "no violatio
 
 Three modules that measure the target's defenses and logic instead of only listing violations. They sit inside the existing scope, Governor, impact matrix and verifier; none of them generates attack text.
 
-| Module | What it does |
-|---|---|
-| **Defense efficacy** (*Defense Efficacy* page, `POST /api/defense-tests`) | Runs one library against two endpoints of the same signed scope: `guardrail_off` (no defense) and `guardrail_on` (filter, hardened system prompt). The tool cannot switch a guardrail itself, so each mode is a saved target. Per attack vector the two outcomes are compared: *blocked* (violated without the defense, clean with it), *bypassed* (violated in both), *regression* (clean without, violated with), *never worked* (clean in both) or *inconclusive*. **Defense Score = blocked / (blocked + bypassed)** with a 95% Wilson interval, per category and attack family. "Violated" means a verified, non-false-positive finding. A vector that never worked unprotected is reported as untested, never counted as a success of the defense, and no working attack means "n/a", not 100%. |
-| **Reasoning-layer evaluation** (`type: reasoning_chain`) | A case lists 2-12 steps. Each has a `message`, an optional operator-written `hint` or `constraint` appended to it, and an `expect` rule table (`contains`, `not_contains`, `refused`, `min_chars`, `max_chars`). After every reply the code checks the rules; a step that breaks them is a **Reasoning Deviation**. Every intermediate reply is stored and shown as a timeline in the finding's *Reasoning* tab. No judge call is made, the deviation must reproduce in the replays like any finding, and the impact class `Reasoning deviation` is capped at medium. The category must be `misinformation` so the scope's attack-class attestation applies. Example: `docs/examples/reasoning-chain-example.json`. |
-| **Sandboxed verification** (*Settings -> Sandbox verification*, off by default) | After a finding is verified (and not refuted by the adversarial verifier), the target's own output is analysed by an isolated runner and the finding is labelled `verified_exploitable`, `not_exploitable`, `not_applicable` or `unavailable`. HTML is parsed (never rendered) for what a browser runs on its own: `<script>`, `on*` handlers, `javascript:` URLs, `srcdoc`, `<object>`. SQL is executed against a throw-away in-memory SQLite database with decoy rows and per-job canaries, behind an authorizer (no ATTACH, PRAGMA or extensions). Active HTML inside a Markdown code block counts as not exploitable. Shell commands are **never executed**. Only unsafe-output findings are eligible. A label never removes a finding and never changes its severity. |
+#### Defense efficacy
+
+*Where: Defense Efficacy page, or* `POST /api/defense-tests`
+
+Runs one library against two endpoints of the same signed scope: `guardrail_off` (no defense) and `guardrail_on` (filter, hardened system prompt). The tool cannot switch a guardrail itself, so each mode is a saved target. Per attack vector the two outcomes are compared: *blocked* (violated without the defense, clean with it), *bypassed* (violated in both), *regression* (clean without, violated with), *never worked* (clean in both) or *inconclusive*. **Defense Score = blocked / (blocked + bypassed)** with a 95% Wilson interval, per category and attack family. "Violated" means a verified, non-false-positive finding. A vector that never worked unprotected is reported as untested, never counted as a success of the defense, and no working attack means "n/a", not 100%.
+
+#### Reasoning-layer evaluation
+
+*Library case type:* `reasoning_chain`
+
+A case lists 2-12 steps. Each has a `message`, an optional operator-written `hint` or `constraint` appended to it, and an `expect` rule table (`contains`, `not_contains`, `refused`, `min_chars`, `max_chars`). After every reply the code checks the rules; a step that breaks them is a **Reasoning Deviation**. Every intermediate reply is stored and shown as a timeline in the finding's *Reasoning* tab. No judge call is made, the deviation must reproduce in the replays like any finding, and the impact class `Reasoning deviation` is capped at medium. The category must be `misinformation` so the scope's attack-class attestation applies. Example: `docs/examples/reasoning-chain-example.json`.
+
+#### Sandboxed verification
+
+*Where: Settings → Sandbox verification (off by default)*
+
+After a finding is verified (and not refuted by the adversarial verifier), the target's own output is analysed by an isolated runner and the finding is labelled `verified_exploitable`, `not_exploitable`, `not_applicable` or `unavailable`. HTML is parsed (never rendered) for what a browser runs on its own: `<script>`, `on*` handlers, `javascript:` URLs, `srcdoc`, `<object>`. SQL is executed against a throw-away in-memory SQLite database with decoy rows and per-job canaries, behind an authorizer (no ATTACH, PRAGMA or extensions). Active HTML inside a Markdown code block counts as not exploitable. Shell commands are **never executed**. Only unsafe-output findings are eligible. A label never removes a finding and never changes its severity.
 
 Start the runner with `docker compose --profile sandbox up -d`. The `sandbox-runner` service has `network_mode: none`, a read-only root filesystem, all capabilities dropped, `no-new-privileges`, a non-root user and memory/pid limits. The backend does not get the Docker socket: it exchanges small JSON files with the runner through a shared volume, checks the runner's heartbeat before submitting, and validates the answer as untrusted data (known fields, known effect types, bounded lengths). Without the runner, findings are labelled `unavailable` and nothing else changes.
 
@@ -812,7 +831,7 @@ All of them are enforced in code and pinned by tests:
 - **Imported payload libraries and branching have been tested with scripted targets only** (backend tests and the isolated E2E), not against a production model. The family-to-ATLAS/ASI table is a curated evidence mapping (ATLAS ids change between releases: AML.T0068, AML.T0080.000 and AML.T0086 should be verified against your ATLAS version). The importer layouts come from the projects' public descriptions; a changed format needs a `mapping`. Branching's `refused` is a wording check, not the judge: use `contains` rules for target-specific refusals.
 - **Not included by design:** hidden-instruction *document* carriers (uploaded documents are reduced to visible text; only library-supplied image/audio files are carried) and an MCP tool-description scanner. For MCP scanning, integrating a maintained open-source scanner is the better route.
 - **The mock target used for the screenshots and E2E does not trigger every compliance badge** (for example a finding with a MITRE ATLAS badge); the mapping, CSV/PDF output and badges are verified by backend tests, not by a real vulnerable target. **PLAGUE and PersonaTeaming ran end to end once against a small local model (`llama3.2:3b`) as the Attacker, which produced no violation;** their effect with strong models is not measured.
-- **Compliance mappings are curated evidence mappings** (ASI, ATLAS, NIST AI RMF, AISVS chapters), not conformance statements; ASR is not comparable with published benchmark leaderboards; PLAGUE and PersonaTeaming have been tested with scripted Attacker models and one run with a small local model, not with strong models. Evaluations the judge could not complete (`inconclusive`) are never counted as clean and stay out of the ASR.
+- **Compliance mappings are curated evidence mappings** (ASI, ATLAS, NIST AI RMF, AISVS chapters), not conformance statements; ASR is not comparable with published benchmark leaderboards. Evaluations the judge could not complete (`inconclusive`) are never counted as clean and stay out of the ASR.
 - The dashboard's live stream shows the engine's real recorded steps (requests sent, judge verdicts, refusals, cleanup); it does not show model "thoughts".
 
 ## Documentation
@@ -829,11 +848,12 @@ backend/            Python / FastAPI / PostgreSQL (llm_redteam/ core, starter_ki
 frontend/           Next.js 16 / React 19 / Tailwind / Radix / Framer Motion / Recharts / TanStack Query
 sandbox/            Isolated E2E: fake LLM, Ollama bridge, network-namespace orchestration
 docs/               Architecture, design decisions, E2E output (screenshots, PDFs)
-scripts/            init-env.sh (secret generation)
+runner/             Isolated sandbox runner (no network, read-only), used for sandboxed verification
+scripts/            init-env.sh (secrets), setup-wizard.sh, secret-leak-check.sh
+install.sh          Interactive installer
 docker-compose.yml  The whole stack with one command
-.github/            CI + Dependabot
+.github/            CI, Dependabot, issue and pull request templates
 LICENSE             GNU AGPL-3.0
-_archive/           Earlier (web/network based) work - not part of the running project (not added to version control)
 ```
 
 ## Contributing
