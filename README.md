@@ -4,11 +4,11 @@
 
 <h1>AIVeritX</h1>
 
-<p><strong>Self-hosted red-teaming platform for LLM applications</strong></p>
+<p><strong>AI penetration testing platform for LLM applications</strong></p>
 
 <p>
-Test prompts, RAG pipelines, agents and tools inside a cryptographically signed scope.
-Every finding is backed by verbatim evidence, confirmed by replay and mapped to OWASP, MITRE ATLAS and NIST AI RMF.
+Find prompt injection, jailbreaks, system prompt leaks, data exfiltration and tool abuse in chatbots, RAG pipelines and AI agents.
+Every test runs inside a signed authorization scope, and every finding is proven with verbatim evidence, confirmed by replay and mapped to OWASP LLM Top 10, MITRE ATLAS and NIST AI RMF.
 </p>
 
 <p>
@@ -45,7 +45,7 @@ Every finding is backed by verbatim evidence, confirmed by replay and mapped to 
 
 ## Why AIVeritX
 
-Most LLM scanners tell you what the model said. AIVeritX tells you **whether you can believe it** and **proves it was safe to run**: no request leaves without a signed scope, and no finding is reported without a verbatim quote, a replay and a second opinion.
+Most AI pentest tools tell you what the model said. AIVeritX tells you **whether you can believe it** and **proves it was safe to run**: no request leaves without a signed scope, and no finding is reported without a verbatim quote, a replay and a second opinion.
 
 <table>
 <tr><th width="24%" align="left">Safeguard</th><th width="52%" align="left">What it prevents</th><th width="24%" align="left">Where to see it</th></tr>
