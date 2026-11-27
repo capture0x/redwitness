@@ -312,77 +312,7 @@ flowchart TB
   ENG -.->|"job files, shared volume"| SBX["sandbox-runner<br/>no network · read-only · no capabilities"]:::danger
 ```
 
-### Data flow of one scan
-
-```mermaid
-sequenceDiagram
-  autonumber
-  actor Op as Operator
-  participant UI as UI
-  participant API as Backend
-  participant Gov as Governor
-  participant T as Target
-  participant J as Judge
-  participant V as Verifier
-  Op->>UI: review the plan, sign the scope
-  UI->>API: start run (scope digest)
-  API->>API: verify signature, expiry, limits
-  loop every test case from the library
-    API->>Gov: message to send
-    Gov->>T: request (IP pinned, budgeted)
-    T-->>API: reply (untrusted data)
-    API->>API: deterministic rules (tools, canaries, Markdown)
-    API->>J: reply and expected behavior
-    J-->>API: verdict and verbatim quote
-    API->>API: the quote must appear in the reply
-  end
-  API->>T: replay in fresh conversations (k of n)
-  API->>V: try to refute the confirmed finding
-  V-->>API: refutation with quote, or none
-  API->>API: impact matrix caps the severity
-  API-->>UI: verified finding, evidence, audit entry
-```
-
-### Finding lifecycle and the adaptive agent loop
-
-```mermaid
-stateDiagram-v2
-  direction LR
-  [*] --> QUEUED
-  QUEUED --> SENDING
-  SENDING --> JUDGING
-  JUDGING --> NO_FINDING
-  JUDGING --> INCONCLUSIVE
-  JUDGING --> CANDIDATE
-  CANDIDATE --> REPLAYING
-  REPLAYING --> VERIFIED: k of n repeat
-  REPLAYING --> UNSTABLE: threshold not reached
-  VERIFIED --> FALSE_POSITIVE: refuted by verifier or reviewer
-  NO_FINDING --> [*]
-  VERIFIED --> [*]
-```
-
-```mermaid
-stateDiagram-v2
-  direction LR
-  [*] --> PROBING: target refused a case
-  PROBING --> ANALYZING
-  ANALYZING --> GENERATING
-  GENERATING --> VALIDATING: one allowed family
-  VALIDATING --> ATTACKING: passes the code checks
-  VALIDATING --> ABORTED: unusable output
-  ATTACKING --> PROBING: refused again, next round
-  ATTACKING --> CONFIRMING: violation
-  ATTACKING --> CLEAN: no violation
-  CONFIRMING --> FOUND: normal replay
-  PROBING --> EXHAUSTED: rounds used
-  FOUND --> [*]
-  CLEAN --> [*]
-  EXHAUSTED --> [*]
-  ABORTED --> [*]
-```
-
-The agent loop is optional, off by default and allowed only by the signed scope. Every state change is appended to an audit trail (`agent_steps`).
+The adaptive attacker loop is optional, off by default and allowed only by the signed scope. Every state change is appended to an audit trail (`agent_steps`). The per-scan sequence and the finding state machine are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Security & architecture
 
