@@ -7,7 +7,7 @@
 <p><strong>Self-hosted red-teaming platform for LLM applications</strong></p>
 
 <p>
-Test prompts, RAG pipelines, agents, tools, vector stores and model files inside a cryptographically signed scope.<br>
+Test prompts, RAG pipelines, agents and tools inside a cryptographically signed scope.
 Every finding is backed by verbatim evidence, confirmed by replay and mapped to OWASP, MITRE ATLAS and NIST AI RMF.
 </p>
 
