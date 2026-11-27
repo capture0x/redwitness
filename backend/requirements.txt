@@ -10,3 +10,4 @@ weasyprint>=67
 pypdf>=5
 defusedxml>=0.7
 pillow>=10
+python-docx>=1.1

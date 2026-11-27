@@ -53,7 +53,7 @@ AIVeritX attacks the application around the model, not only the model: the syste
 <tr><th width="24%" align="left">Attack</th><th width="50%" align="left">What it checks</th><th width="16%" align="left">Example</th><th width="10%" align="left">OWASP</th></tr>
 <tr><td>Direct prompt injection</td><td>User input overrides the system rules or replaces the agent's plan</td><td>"Ignore your rules and..."</td><td>LLM01</td></tr>
 <tr><td>Indirect prompt injection</td><td>Hidden instructions inside uploaded documents and images</td><td>Poisoned RAG document</td><td>LLM01</td></tr>
-<tr><td>Jailbreak</td><td>Safety bypass through role-play, encodings (Base64, ROT13, hex, homoglyph), multi-turn Crescendo, PLAGUE and persona strategies</td><td>Five-turn escalation</td><td>LLM01</td></tr>
+<tr><td>Jailbreak</td><td>The target is talked out of its rules: 12 ready techniques (persona, fake developer mode, encodings, split instruction, many-shot, multi-turn escalation and more)</td><td>Fake developer mode</td><td>LLM01</td></tr>
 <tr><td>System prompt extraction</td><td>The hidden system instructions leak to the user</td><td>"List your rules"</td><td>LLM07</td></tr>
 <tr><td>Sensitive data leakage</td><td>Other users' data, configuration, secrets and planted canaries leave the app</td><td>Another customer's record</td><td>LLM02</td></tr>
 <tr><td>Tool abuse and excessive agency</td><td>The agent calls a forbidden tool, acts without confirmation, or exfiltrates one tool's result through another</td><td>Bulk delete, file sent out</td><td>LLM06</td></tr>
@@ -64,9 +64,10 @@ AIVeritX attacks the application around the model, not only the model: the syste
 <tr><td>Vector store exposure</td><td>Chroma, Qdrant and Weaviate readable without credentials</td><td>Open collection</td><td>LLM08</td></tr>
 <tr><td>Membership inference</td><td>Statistical signal that specific records were in the training data</td><td>Member vs. control AUC</td><td>LLM02</td></tr>
 <tr><td>Model supply chain</td><td>Code-execution risk in pickle, safetensors and GGUF model files (parsed, never loaded)</td><td>Pickle with a payload</td><td>LLM03</td></tr>
+<tr><td>MCP server audit</td><td>Poisoned tool descriptions, risky tools, secrets, open access and rug pulls in an MCP server; read-only, no tool is called</td><td>Hidden instruction in a tool description</td><td>LLM01, LLM06</td></tr>
 </table>
 
-**Ready to run:** an OWASP LLM Top 10 starter kit (10 templates) and 9 advanced scenarios (tool sandbox, agent chains, Crescendo, Markdown exfiltration, multimodal, campaigns, knowledge map, PLAGUE and persona). Bring your own payloads as TXT, JSON, JSONL, CSV or YAML, and let the optional attacker agent rewrite cases the target refused. Results also map to OWASP Agentic (ASI), MITRE ATLAS, NIST AI RMF and OWASP AISVS.
+**Ready to run:** an OWASP LLM Top 10 starter kit (10 templates) and 10 advanced scenarios (tool sandbox, agent chains, Crescendo, Markdown exfiltration, multimodal, campaigns, knowledge map, PLAGUE and persona, and a 12-technique jailbreak set). Bring your own payloads as TXT, JSON, JSONL, CSV or YAML, and let the optional attacker agent rewrite cases the target refused. Results also map to OWASP Agentic (ASI), MITRE ATLAS, NIST AI RMF and OWASP AISVS.
 
 ## Why AIVeritX
 
@@ -132,9 +133,9 @@ Add your judge key to `.env` (for example `ANTHROPIC_API_KEY=...`), then run `do
 1. **Settings → Judge LLM:** choose the provider and model. The key itself stays in `.env`; only its variable name is entered here.
 2. **New Test → Quick scan:** enter the target's base URL, the model name and how to sign in (API key, cookie string or a custom header).
 3. Press **Review the scan**, read the plan, tick *"I am authorized to test this target"* and press **Sign and start scan**.
-4. Watch the run live. Verified findings appear as they are confirmed; open **Findings**, the **Attack tree** and the **PDF/CSV report** when it finishes.
+4. Watch the run live. Verified findings appear as they are confirmed; open **Findings**, the **Attack tree** and the reports when it finishes: the **Client report** (a pentest report for your client, PDF or Word) or the technical PDF and CSV.
 
-A Quick scan creates a normal 7-day signed scope with a fixed budget, saves the target and runs the full OWASP kit plus Crescendo and Markdown-leak checks. The target must speak the OpenAI chat-completions or Anthropic messages format.
+A Quick scan creates a normal 7-day signed scope with a fixed budget, saves the target and runs the full OWASP kit plus Crescendo, Markdown-leak and 12 jailbreak-technique checks. The target can speak the OpenAI chat-completions or Anthropic messages format, or be any other JSON chat API (see [Testing a web chatbot or a custom API](#testing-a-web-chatbot-or-a-custom-api)).
 
 A *Getting started* panel on the dashboard walks you through the same steps and ticks each one by itself. Empty pages tell you what to do next and every form field has an (i) tooltip.
 
@@ -167,6 +168,20 @@ A *Getting started* panel on the dashboard walks you through the same steps and 
 <td><img src="docs/screenshots/owasp-scan-dialog.png" alt="Scan dialog" width="100%"></td>
 </tr>
 </table>
+
+### Testing a web chatbot or a custom API
+
+For an app that does not speak the OpenAI or Anthropic format (for example a web chatbot's own backend), choose the provider **Custom HTTP API (JSON)**. The quickest way: in the browser's developer tools, copy the chat request with *Copy as cURL* and paste it into *Import from a copied request*; the URL, body template and cookie are filled in. Check the **response path** (where the reply text is, for example `data.answer`) and use **Preview request** to see the body without sending anything.
+
+```json
+{"question": "{{prompt}}", "conversation_id": "{{session_id}}"}
+```
+
+`{{prompt}}` is the test message and `{{session_id}}` one random id per conversation, so multi-turn attacks work on APIs that keep the chat on the server. The template is part of the signed scope.
+
+### Auditing an MCP server
+
+Add the server to a scope with the provider `mcp` and the class **MCP server audit**, then use *Testing → MCP Servers*. AIVeritX only lists the server's tools, prompts and resources (it never calls a tool) and reports poisoned descriptions, risky tools, secrets, open access and changes since the last scan. Details: [docs/FEATURES.md](docs/FEATURES.md#mcp-server-audit).
 
 ### Testing a model on your own machine
 
@@ -207,7 +222,7 @@ Omit `library_id` to run the built-in OWASP starter kit (`owasp`: list of ids, d
 - **CI/CD gate**: scoped, expiring API tokens; incomplete scans never pass.
 
 <details>
-<summary><b>All capabilities (32)</b></summary>
+<summary><b>All capabilities (35)</b></summary>
 
 <table>
 <tr><th width="30%" align="left">Capability</th><th width="70%" align="left">What you get</th></tr>
@@ -219,6 +234,7 @@ Omit `library_id` to run the built-in OWASP starter kit (`owasp`: list of ids, d
 <tr><td>Reasoning-layer evaluation</td><td>Code rules check every intermediate step of a multi-step answer</td></tr>
 <tr><td colspan="2"><b>Attack coverage</b></td></tr>
 <tr><td>Adaptive Attacker agent</td><td>Rewrites refused cases within operator-allowed families, scoped and budgeted</td></tr>
+<tr><td>Jailbreak technique set</td><td>12 common techniques measured with a harmless activation code, so no harmful content is ever requested</td></tr>
 <tr><td>PLAGUE and PersonaTeaming</td><td>Planning and persona strategies, all written by you in the library</td></tr>
 <tr><td>Crescendo conversations</td><td>5 to 10 turn scenarios that build on the target&#x27;s previous replies</td></tr>
 <tr><td>Rule-based branching</td><td>The target&#x27;s reply picks the next library message, forward only</td></tr>
@@ -226,6 +242,7 @@ Omit `library_id` to run the built-in OWASP starter kit (`owasp`: list of ids, d
 <tr><td>Defense-bypass transforms</td><td>Base64, ROT13, hex, homoglyph, split and language-switch encodings</td></tr>
 <tr><td>Payload library import</td><td>TXT, JSON, JSONL, CSV, YAML or AltayDuel payloads, tagged by attack family</td></tr>
 <tr><td colspan="2"><b>Agents, tools and data</b></td></tr>
+<tr><td>MCP server audit</td><td>Read-only check of an MCP server's tools, prompts and resources: poisoning, shadowing, risky tools, secrets, open access, rug pull</td></tr>
 <tr><td>Tool sandbox</td><td>Fake tools with canned results; a forbidden tool call is a Critical finding</td></tr>
 <tr><td>Agentic tool chains</td><td>Multi-step tool scenarios; protected data leaving through a tool is Critical</td></tr>
 <tr><td>Document ingestion (RAG)</td><td>Test documents as PDF, DOCX, HTML, MD, CSV or TXT, removed after each run</td></tr>
@@ -244,9 +261,10 @@ Omit `library_id` to run the built-in OWASP starter kit (`owasp`: list of ids, d
 <tr><td>Benchmark datasets</td><td>HarmBench, JailbreakBench and StrongREJECT with Attack Success Rate</td></tr>
 <tr><td>Attack tree</td><td>Interactive graph of what the agent tried and how the verdict was reached</td></tr>
 <tr><td>Remediator</td><td>Suggested secure prompt and code patch per finding, never auto-applied</td></tr>
+<tr><td>Client report</td><td>Pentest report for the client (PDF or editable Word): executive summary, signed scope, findings with steps to reproduce, evidence and remediation; several runs of one engagement in one report</td></tr>
 <tr><td colspan="2"><b>Workflow and integration</b></td></tr>
 <tr><td>Quick scan</td><td>Enter a URL, review the signed plan and run the full OWASP kit in one step</td></tr>
-<tr><td>Targets and auth types</td><td>Save targets with an API key, a browser cookie or a custom header</td></tr>
+<tr><td>Targets and auth types</td><td>OpenAI-compatible, Anthropic or any JSON chat API (request template); API key, browser cookie or custom header</td></tr>
 <tr><td>Drag-and-drop uploads</td><td>Drop a PDF, DOCX or EML file, or a JSON / YAML test library</td></tr>
 <tr><td>CI/CD gate</td><td>Scoped, expiring API token; an incomplete scan never passes the gate</td></tr>
 </table>
@@ -427,7 +445,7 @@ Template: [`.env.example`](.env.example). In Docker **all** variables in `.env` 
 
 | Role | Permissions |
 |---|---|
-| **Viewer** (`viewer`) | Read only: dashboard, runs, findings, PDF/CSV reports, the OWASP matrix, library and scope lists |
+| **Viewer** (`viewer`) | Read only: dashboard, runs, findings, client and technical reports (PDF/DOCX/CSV), the OWASP matrix, library and scope lists |
 | **Operator** (`operator`) | + start/stop tests, global stop, import libraries/templates, OWASP scans, read audit and settings |
 | **Admin** (`admin`) | + create/sign/revoke scopes, write settings, user management |
 
@@ -464,7 +482,7 @@ The last active admin cannot be demoted. Every refused access is written to the 
 
 - **The judge can be wrong.** The defense is layered (quote check, replay, canary, human review) but it is no substitute for a capable judge model.
 - **The OWASP view is not a certificate.** LLM03, LLM04 and LLM08 are only partly testable through a black-box API, and compliance mappings are curated evidence mappings, not conformance statements.
-- **Target format:** targets must speak the OpenAI chat-completions or Anthropic messages format; `multipart/form-data` uploads and custom request shapes are not supported yet.
+- **Target format:** OpenAI chat-completions, Anthropic messages, or any JSON chat API through a request template. Custom HTTP targets use POST with a JSON body only (no form or `multipart/form-data` bodies, no streaming), and cannot run fake-tool or image/audio cases.
 - **Credentials live in memory only:** API keys, cookie strings and header values are asked for again after a restart.
 - **Privacy and extraction modules are indicators, not proof**, and model file scanning finds code-execution risk, not poisoned weights.
 - **Advanced modules** (attacker rewrites, campaigns, multimodal, payload branching) are tested with scripted targets and small local models, not yet measured against strong production models.

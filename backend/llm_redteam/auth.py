@@ -90,7 +90,7 @@ PERMISSIONS: list[tuple[frozenset, "re.Pattern", str]] = [
     (frozenset({"GET"}), re.compile(p), "viewer") for p in (
         r"/api/system", r"/api/meta", r"/api/reasons", r"/api/stats", r"/api/live", r"/api/runs", rf"/api/runs/{_ID}",
         r"/api/findings", r"/api/findings\.csv", rf"/api/findings/{_ID}/remediation", r"/api/benchmarks", rf"/api/benchmarks/{_ID}", r"/api/model-scans", rf"/api/model-scans/{_ID}", r"/api/targets", r"/api/analyses", rf"/api/analyses/{_ID}", rf"/api/runs/{_ID}/report\.pdf", rf"/api/runs/{_ID}/findings\.csv",
-        r"/api/libraries", rf"/api/libraries/{_ID}", r"/api/scopes", r"/api/templates", r"/api/owasp/matrix", r"/api/frameworks", r"/api/frameworks/stats", r"/api/calibration", r"/api/defense-tests", rf"/api/defense-tests/{_ID}", r"/api/knowledge-maps", r"/api/campaigns", rf"/api/campaigns/{_ID}")
+        r"/api/libraries", rf"/api/libraries/{_ID}", r"/api/scopes", r"/api/templates", r"/api/owasp/matrix", r"/api/frameworks", r"/api/frameworks/stats", r"/api/calibration", r"/api/defense-tests", rf"/api/defense-tests/{_ID}", r"/api/knowledge-maps", r"/api/campaigns", rf"/api/campaigns/{_ID}", r"/api/mcp-scans")
 ] + [
     (frozenset({"GET"}), re.compile(r"/api/audit"), "operator"),
     (frozenset({"GET"}), re.compile(r"/api/settings"), "operator"),
@@ -113,7 +113,9 @@ PERMISSIONS: list[tuple[frozenset, "re.Pattern", str]] = [
     (frozenset({"POST"}), re.compile(r"/api/analyses"), "operator"),
     (frozenset({"POST"}), re.compile(rf"/api/findings/{_ID}/review"), "operator"),
     (frozenset({"POST"}), re.compile(r"/api/defense-tests"), "operator"),
+    (frozenset({"POST"}), re.compile(r"/api/mcp-scans"), "operator"),
     (frozenset({"POST"}), re.compile(r"/api/bias/assess"), "viewer"),         # read-only computation
+    (frozenset({"POST"}), re.compile(r"/api/client-report"), "viewer"),       # export only (like report.pdf); changes nothing
     (frozenset({"POST"}), re.compile(r"/api/auth/password"), "viewer"),       # own password
 ]
 OPEN_PATHS = ("/api/auth/login", "/api/auth/status", "/api/auth/logout")

@@ -20,9 +20,10 @@ from pydantic import BaseModel, Field
 from llm_redteam.auth import (COOKIE, OPEN_PATHS, required_role, CSRF_HEADER, ROLES, ROLE_LABEL, Auth, AuthError, hash_password, validate_password,
                               validate_username, verify_password)
 from llm_redteam.engine import Executor, RunConfig
-from llm_redteam.evaluator import Evaluator, judge_advisory
+from llm_redteam.evaluator import Evaluator, clean_untrusted, judge_advisory
 from llm_redteam.governor import Governor
 from llm_redteam import ci as ci_mod
+from llm_redteam import clientreport
 from llm_redteam.attacker import Attacker
 from llm_redteam.judges import build_attacker_llm, build_judge, build_remediator_llm, build_role_llm
 from llm_redteam.remediator import KINDS as REM_KINDS, Remediator, RemediatorError
@@ -40,7 +41,8 @@ from llm_redteam import owasp as owasp_mod
 from llm_redteam import reports, starter
 from llm_redteam.reasons import CATEGORY, CATEGORY_LABEL, EXPLAIN, Reason
 from llm_redteam.risk import SEVERITY_LABEL, risk_label
-from llm_redteam.scope import ALL_PROVIDERS, ANALYSIS_CLASSES, ATTACK_CLASSES, CLASS_LABEL, VECTOR_PROVIDERS, Endpoint, Limits, LLMScope, ScopeInputError
+from llm_redteam.scope import ALL_PROVIDERS, ANALYSIS_CLASSES, ATTACK_CLASSES, CLASS_LABEL, MCP_PROVIDERS, VECTOR_PROVIDERS, Endpoint, Limits, LLMScope, ScopeInputError
+from llm_redteam import mcpscan
 from llm_redteam import bias as bias_mod
 from llm_redteam import calibration as calibration_mod
 from llm_redteam.signing import Keyring, SigningError
@@ -60,6 +62,8 @@ class EndpointIn(BaseModel):
     api_key_env: str | None = None
     ingest_url: str | None = None
     ingest_delete_url: str | None = None
+    request_template: str | None = Field(default=None, max_length=8000)   # custom HTTP (http_json) endpoints only
+    response_path: str | None = Field(default=None, max_length=200)
 
 
 class LimitsIn(BaseModel):
@@ -152,6 +156,15 @@ class AnalysisIn(BaseModel):
     use_logprobs: bool = False
 
 
+class McpScanIn(BaseModel):
+    scope_id: str
+    endpoint_url: str
+    auth_type: str = "none"                                         # none | bearer | header
+    auth_header: str | None = Field(default=None, max_length=64)
+    api_key: str | None = Field(default=None, max_length=8000)      # memory only, never stored
+    judge_review: bool = False                                      # also let the judge model read every description (verbatim quote required)
+
+
 class TargetIn(BaseModel):
     name: str
     provider: str = "openai_compat"
@@ -164,6 +177,8 @@ class TargetIn(BaseModel):
     local: bool | None = None                                     # None: decided from the address (loopback / private network)
     ingest_url: str | None = Field(default=None, max_length=500)
     ingest_delete_url: str | None = Field(default=None, max_length=500)
+    request_template: str | None = Field(default=None, max_length=8000)  # custom HTTP (http_json): JSON body with {{prompt}} / {{messages}} / {{session_id}}
+    response_path: str | None = Field(default=None, max_length=200)      # custom HTTP: dotted path of the reply text, e.g. data.reply
 
 
 class DocToCaseIn(BaseModel):
@@ -188,6 +203,8 @@ class QuickScanIn(BaseModel):
     local: bool | None = None
     auth_type: str = "bearer"
     auth_header: str | None = Field(default=None, max_length=64)
+    request_template: str | None = Field(default=None, max_length=8000)   # custom HTTP targets
+    response_path: str | None = Field(default=None, max_length=200)
     api_key: str | None = Field(default=None, max_length=8000)     # credential: memory only
     include_tools: bool = False                                    # also run the tool-abuse (fake tools) cases
     tools_attested: bool = False                                   # required when include_tools: "the target's tools run in a test environment"
@@ -314,6 +331,16 @@ def to_scope(b: ScopeIn, *, signing: bool = False) -> LLMScope:
                     branching_allowed=b.branching_allowed, lineage_id=b.lineage_id or "")
 
 
+class ClientReportIn(BaseModel):
+    run_ids: list[str] = Field(min_length=1, max_length=20)          # one engagement: every run must be under the same signed scope
+    client: str | None = Field(default=None, max_length=200)
+    project: str | None = Field(default=None, max_length=200)
+    tester: str | None = Field(default=None, max_length=200)
+    classification: str = "Confidential"
+    include_unverified: bool = False
+    format: str = "pdf"                                               # pdf | docx
+
+
 class LoginIn(BaseModel):
     password: str
     username: str = "admin"
@@ -340,7 +367,8 @@ class OwnPasswordIn(BaseModel):
 
 
 def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_factory=None,
-               adapter_factory=None, auth: Auth | None = None, attacker_factory=None, remediator_factory=None, vector_factory=None, verifier_factory=None, sandbox_factory=None) -> FastAPI:
+               adapter_factory=None, auth: Auth | None = None, attacker_factory=None, remediator_factory=None, vector_factory=None, verifier_factory=None, sandbox_factory=None,
+               mcp_factory=None) -> FastAPI:
     dsn = dsn or os.environ.get("AIVERITX_DATABASE_URL")
     if not dsn:
         raise RuntimeError("AIVERITX_DATABASE_URL is required (postgresql://user:password@host/database)")
@@ -354,6 +382,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     verifier_factory = verifier_factory or (lambda settings: build_role_llm(settings, "verifier"))
     adapter_factory = adapter_factory or (lambda ep, key, stream: TargetAdapter(ep, key, stream=stream))
     vector_factory = vector_factory or (lambda ep, gov: VectorProbe(ep, gov))
+    mcp_factory = mcp_factory or (lambda ep, gov, cred: mcpscan.McpClient(ep, gov, cred))
     auth.bind(store)
     ci_limiter = ci_mod.RateLimiter()
     limiter = ci_mod.RateLimiter()                       # general per-user limits (in memory)
@@ -669,6 +698,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             bad(409, EXPLAIN[Reason.ENDPOINT_NOT_AUTHORIZED], Reason.ENDPOINT_NOT_AUTHORIZED.value)
         if ep.provider in VECTOR_PROVIDERS:
             bad(422, "This endpoint is a vector store: test it from the Privacy & Extraction page, not with a prompt library.")
+        if ep.provider in MCP_PROVIDERS:
+            bad(422, "This endpoint is an MCP server: audit it from the MCP Servers page, not with a prompt library.")
         row = store.get_library(body.library_id)
         if not row:
             bad(404, "Library not found.")
@@ -914,12 +945,13 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             t = store.get_target(body.target_id)
             if not t:
                 bad(404, "Target not found.")
-            tf = {k: t[k] for k in ("name", "provider", "base_url", "request_url", "model", "api_key_env", "ingest_url", "ingest_delete_url", "auth_type", "auth_header")}
+            tf = {k: t[k] for k in ("name", "provider", "base_url", "request_url", "model", "api_key_env", "ingest_url", "ingest_delete_url", "auth_type", "auth_header",
+                                    "request_template", "response_path")}
             local = t["local"]
         else:
             try:
                 tf = targetcfg.validate(body.name or targetcfg.default_name(body.base_url or "", body.model or ""), body.provider, body.base_url or "", body.model or "",
-                                        None, None, None, body.auth_type, body.auth_header)
+                                        None, None, None, body.auth_type, body.auth_header, body.request_template, body.response_path)
             except targetcfg.TargetInputError as e:
                 bad(422, str(e))
             local = targetcfg.is_local_host(tf["request_url"]) if body.local is None else body.local
@@ -930,7 +962,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         host = tf["request_url"].split("/")[2]
         scope_in = ScopeIn(name=f"Quick scan: {host}"[:100], client=host, authorized_by=user, authorization_doc_sha256=doc, valid_days=QUICK_VALID_DAYS, valid_from=body.valid_from,
                            endpoints=[EndpointIn(url=tf["request_url"], provider=tf["provider"], model=tf["model"], local=local, api_key_env=tf["api_key_env"],
-                                                 ingest_url=tf["ingest_url"], ingest_delete_url=tf["ingest_delete_url"])],
+                                                 ingest_url=tf["ingest_url"], ingest_delete_url=tf["ingest_delete_url"],
+                                                 request_template=tf["request_template"], response_path=tf["response_path"])],
                            attack_classes=classes, limits=LimitsIn(**QUICK_LIMITS), tool_abuse_attested=bool(body.include_tools), lineage_id=body.lineage_id)
         return tf, local, scope_in
 
@@ -966,6 +999,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         if want is not None:
             cases = [c for c in cases if (c.owasp_category or owasp_mod.default_for(c.category)) in want]
         runnable = len(cases)
+        format_skipped = sum(1 for c in lib.cases if (c.tools or c.media) and (want is None or (c.owasp_category or owasp_mod.default_for(c.category)) in want)
+                             and c.category in sc.attack_classes) if tf["provider"] == "http_json" else 0
         planned = sorted({c.owasp_category or owasp_mod.default_for(c.category) for c in cases})
         wanted = want if want is not None else [c["id"] for c in owasp_mod.CATEGORIES]
         not_run = [w for w in wanted if w not in planned]
@@ -973,6 +1008,9 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             bad(422, "No test fits the selected categories and the classes this scan can sign (tool-abuse categories need the attestation).")
         return {"digest": digest, "lineage_id": sc.lineage_id, "valid_from": sc.content()["valid_from"], "content": sc.content(), "request_url": tf["request_url"], "local": local,
                 "auth_type": tf["auth_type"], "cases": runnable, "cases_in_library": total, "skipped_cases": total - runnable, "owasp": want, "categories_planned": planned, "categories_skipped": not_run,
+                "skipped_format": format_skipped, "skipped_unauthorized": total - runnable - format_skipped,
+                "skip_note": ("A custom HTTP target has no tool-calling or file format, so cases with fake tools or image/audio files are skipped." if tf["provider"] == "http_json"
+                              else "Tool-abuse categories need the test-environment attestation above."),
                 "judge_configured": judge_factory(settings()) is not None, "signing_available": ring.can_sign}
 
     @app.post("/api/quick-scan", status_code=202)
@@ -1252,6 +1290,42 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         pdf = reports.render_pdf(reports.report_html(run, run["findings"], limits, calibration=calibration_mod.summary(store.review_rows())))
         return attach(pdf, "application/pdf", f"report-{run_id[:8]}.pdf")
 
+    @app.post("/api/client-report")
+    def client_report(body: ClientReportIn, request: Request):
+        """The client-ready penetration test report for one engagement (1-20 finished runs under one signed scope), as PDF or DOCX."""
+        if body.format not in ("pdf", "docx"):
+            bad(422, "format must be pdf or docx.")
+        try:
+            opts = clientreport.options(body.client, body.project, body.tester, body.classification, body.include_unverified)
+        except clientreport.ReportOptionsError as e:
+            bad(422, str(e))
+        ids = list(dict.fromkeys(body.run_ids))
+        runs = [store.get_run(r) for r in ids]
+        if any(r is None for r in runs):
+            bad(404, "Run not found.")
+        if any(r["status"] == "running" for r in runs):
+            bad(409, "A run is still running. Create the report when it has finished.")
+        if len({r["scope_id"] for r in runs}) != 1:
+            bad(422, "All runs in one report must belong to the same signed scope (one engagement).")
+        scope = next((s for s in store.list_scopes(ring) if s["id"] == runs[0]["scope_id"]), None)
+        if scope is None:
+            bad(404, "The scope of these runs was not found.")
+        statuses = clientreport.INCLUDED_ALL if opts["include_unverified"] else clientreport.INCLUDED_DEFAULT
+        rems = {}
+        for r in runs:
+            for f in r["findings"]:
+                if f["status"] in statuses:
+                    rem = store.latest_remediation(f["id"])
+                    if rem:
+                        rems[f["id"]] = rem["result"]
+        model = clientreport.build(runs, scope, opts, remediations=rems, audit_ok=store.audit_verify() is None)
+        store.audit("report.export", actor=request.state.user, run_id=ids[0], detail={"format": f"client-{body.format}", "runs": ids, "findings": len(model["findings"]),
+                                                                                       "include_unverified": opts["include_unverified"]})
+        name = f"pentest-report-{ids[0][:8]}"
+        if body.format == "docx":
+            return attach(clientreport.to_docx(model), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", name + ".docx")
+        return attach(reports.render_pdf(clientreport.to_html(model)), "application/pdf", name + ".pdf")
+
     # ------------------------------------------------------------ findings / dashboard / audit
     @app.get("/api/findings")
     def findings(status: str | None = None, category: str | None = None, owasp: str | None = None):
@@ -1328,7 +1402,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
 
     # ------------------------------------------------------------ saved targets
     def _target_view(t: dict) -> dict:
-        return {k: t[k] for k in ("id", "name", "provider", "base_url", "request_url", "model", "api_key_env", "local", "ingest_url", "ingest_delete_url", "created_by", "created_at", "auth_type", "auth_header")} \
+        return {k: t[k] for k in ("id", "name", "provider", "base_url", "request_url", "model", "api_key_env", "local", "ingest_url", "ingest_delete_url", "created_by", "created_at", "auth_type", "auth_header",
+                                "request_template", "response_path")} \
             | {"has_key": t["id"] in target_keys, "suggest_local": targetcfg.is_local_host(t["request_url"])}
 
     @app.get("/api/targets")
@@ -1338,7 +1413,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     @app.post("/api/targets", status_code=201)
     def targets_create(body: TargetIn, request: Request):
         try:
-            t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header)
+            t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header,
+                                    body.request_template, body.response_path)
             secret = targetcfg.clean_credential(body.auth_type, body.api_key) if body.api_key else body.api_key
         except targetcfg.TargetInputError as e:
             bad(422, str(e))
@@ -1356,7 +1432,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     @app.put("/api/targets/{tid}")
     def targets_update(tid: str, body: TargetIn, request: Request):
         try:
-            t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header)
+            t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header,
+                                    body.request_template, body.response_path)
             secret = targetcfg.clean_credential(body.auth_type, body.api_key) if body.api_key else body.api_key
         except targetcfg.TargetInputError as e:
             bad(422, str(e))
@@ -1467,6 +1544,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         if cls not in scope.attack_classes:
             store.audit("analysis.refused", actor=request.state.user, reason=Reason.ATTACK_CLASS_NOT_ALLOWED, detail={"class": cls})
             bad(409, EXPLAIN[Reason.ATTACK_CLASS_NOT_ALLOWED], Reason.ATTACK_CLASS_NOT_ALLOWED.value)
+        if ep.provider in MCP_PROVIDERS:
+            bad(422, "This endpoint is an MCP server: audit it from the MCP Servers page.")
         if (ep.provider in VECTOR_PROVIDERS) != (body.kind == "vector"):
             bad(422, "Vector store tests need a vector store endpoint (chroma, qdrant or weaviate); extraction and membership tests need an LLM endpoint.")
         if wait := limiter.hit(f"analysis:{request.state.user}", 6, 60):
@@ -1513,6 +1592,106 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
 
         live_analyses[aid] = (asyncio.create_task(go()), gov)
         return {"id": aid, "kind": body.kind}
+
+    # ------------------------------------------------------------ MCP server audit (read-only; recorded as a run with normal findings)
+    MCP_LIBRARY = {"name": "MCP server audit", "version": "1.0.0", "sha256": hashlib.sha256(json.dumps(sorted(mcpscan.MAPPING)).encode()).hexdigest()}
+
+    @app.get("/api/mcp-scans")
+    def mcp_scans():
+        out = []
+        for r in store.list_runs():
+            if (r.get("config") or {}).get("kind") != "mcp_scan":
+                continue
+            full = store.get_run(r["id"])
+            out.append({"id": r["id"], "scope_id": r["scope_id"], "endpoint_url": r["endpoint_url"], "status": r["status"], "created_at": r["created_at"],
+                        "finished_at": r.get("finished_at"), "verified": r.get("verified"), "findings": r.get("findings"), "mcp": (full.get("snapshot") or {}).get("mcp")})
+        return out
+
+    @app.post("/api/mcp-scans", status_code=202)
+    async def mcp_scan_start(body: McpScanIn, request: Request):
+        """Read-only MCP server audit: initialize + list tools/prompts/resources (never tools/call), deterministic checks, optional judge review.
+        Same signed-scope gate and Governor as everything else. The result is a run with normal findings (Findings page, reports)."""
+        try:
+            scope = store.load_verified_scope(body.scope_id, ring)
+        except ScopeGateError as e:
+            store.audit("mcp.refused", actor=request.state.user, reason=e.reason, detail={"scope_id": body.scope_id})
+            bad(409, e.message, e.reason.value)
+        ep = scope.endpoint(body.endpoint_url)
+        if ep is None:
+            bad(409, EXPLAIN[Reason.ENDPOINT_NOT_AUTHORIZED], Reason.ENDPOINT_NOT_AUTHORIZED.value)
+        if ep.provider not in MCP_PROVIDERS:
+            bad(422, "This endpoint is not an MCP server. Add it to the scope with the provider 'mcp'.")
+        if mcpscan.CATEGORY not in scope.attack_classes:
+            store.audit("mcp.refused", actor=request.state.user, reason=Reason.ATTACK_CLASS_NOT_ALLOWED, detail={"class": mcpscan.CATEGORY})
+            bad(409, EXPLAIN[Reason.ATTACK_CLASS_NOT_ALLOWED], Reason.ATTACK_CLASS_NOT_ALLOWED.value)
+        if body.auth_type not in ("none", "bearer", "header"):
+            bad(422, "auth_type must be none, bearer or header.")
+        cred = None
+        if body.auth_type != "none":
+            if not body.api_key:
+                bad(422, "Enter the credential, or choose 'none'.")
+            try:
+                value = targetcfg.clean_credential("header", body.api_key)
+                header = targetcfg.clean_header_name(body.auth_header) if body.auth_type == "header" else "Authorization"
+            except targetcfg.TargetInputError as e:
+                bad(422, str(e))
+            cred = {"header": header, "value": f"Bearer {value}" if body.auth_type == "bearer" else value}
+        judge = None
+        if body.judge_review:
+            j = judge_factory(settings())
+            if j is None:
+                bad(503, "The judge LLM is not configured: choose a provider/model in Settings and provide the key via an environment variable.")
+            evaluator = Evaluator(j, min_confidence=settings()["min_confidence"])
+
+            async def judge(text: str):
+                return await evaluator.evaluate(category="prompt_injection_indirect", expected_behavior=mcpscan.JUDGE_EXPECTED, evaluator_hint=mcpscan.JUDGE_HINT,
+                                                sent=["(MCP definition review: no message was sent to the server)"], response=clean_untrusted(text), tool_calls=[])
+        if wait := limiter.hit(f"mcp:{request.state.user}", 6, 60):
+            bad(429, f"Too many scans; try again in {wait} s.", "RATE_LIMITED")
+        previous = None
+        for r in store.list_runs():                                     # newest first: the last finished scan of this server (rug-pull baseline)
+            if (r.get("config") or {}).get("kind") == "mcp_scan" and r["endpoint_url"] == ep.url and r["status"] == "completed":
+                previous = (store.get_run(r["id"]).get("snapshot") or {}).get("tool_hashes")
+                break
+        rid = store.create_run(body.scope_id, ep.url,
+                               {"kind": "mcp_scan", "model": "MCP server", "library": MCP_LIBRARY, "scope_version": scope.version, "judge_review": body.judge_review,
+                                "auth_type": body.auth_type, "cases": 0, "started_by": request.state.user})
+        gov = Governor(scope, lambda action, **kw: store.audit(action, run_id=rid, reason=kw.get("reason"), detail=kw.get("detail")))
+        store.audit("mcp.start", actor=request.state.user, run_id=rid, detail={"endpoint": ep.url, "judge_review": body.judge_review, "auth_type": body.auth_type})
+
+        async def go():
+            client = None
+            try:
+                client = mcp_factory(ep, gov, cred)
+                result = await mcpscan.audit(client, previous=previous, judge=judge)
+                server = result.get("server") or {}
+                for f in mcpscan.findings_from(result):
+                    i = f["issue"]
+                    ev = {"endpoint": ep.url, "model": (server.get("name") or "MCP server") + (f" {server['version']}" if server.get("version") else ""), "library": MCP_LIBRARY,
+                          "case": {"id": f["case_id"], "category": f["category"], "severity": f["severity"],
+                                   "expected_behavior": "MCP definitions describe only what a tool does, carry no hidden instructions or secrets, and risky tools are narrow and protected."},
+                          "sequence": ["MCP initialize, then tools/list, prompts/list and resources/list (read-only listing; no tool was called)"],
+                          "transcript": [{"role": "user", "content": f"MCP listing request ({i['where']} of {i['kind']} '{i['name']}')"}, {"role": "assistant", "content": i["quote"]}],
+                          "evaluation": {"verdict": "violation", "confidence": 1.0, "rationale": i["detail"], "source": "judge" if i.get("judge") else "deterministic rule",
+                                         "questions": {"filter_bypassed": {"answer": "yes", "evidence_quote": i["quote"]}}},
+                          "mcp": i, "remediation": f["remediation"]}
+                    store.add_finding(rid, f["case_id"], f["category"], f["status"], f["title"], ev, owasp_category=f["owasp"], tags={"asi": f["asi"]})
+                snap = {"mcp": {"server": server, "auth": result.get("auth"), "judge_reviewed": result.get("judge_reviewed", 0),
+                                "tools": [t | {"issues": sorted({i["code"] for i in result["issues"] if i["kind"] == "tool" and i["name"] == t["name"]})} for t in result["tools"]],
+                                "prompts": result["prompts"], "resources": result["resources"], "issue_count": len(result["issues"])},
+                        "tool_hashes": {t["name"]: t["hash"] for t in result["tools"]}, "governor": gov.snapshot()}
+                store.update_run(rid, requests=result.get("requests", 0))
+                stop = result.get("stopped_reason")
+                store.finish_run(rid, "halted" if stop else "completed", stop, snap)
+            except Exception as e:  # noqa: BLE001
+                store.finish_run(rid, "failed", type(e).__name__, {"error": type(e).__name__})
+            finally:
+                if client is not None:
+                    await client.aclose()
+                live_analyses.pop(rid, None)
+
+        live_analyses[rid] = (asyncio.create_task(go()), gov)
+        return {"id": rid}
 
     @app.post("/api/benchmarks", status_code=202)
     async def benchmark_start(body: BenchmarkIn, request: Request):

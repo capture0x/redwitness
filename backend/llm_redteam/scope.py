@@ -14,12 +14,14 @@ ATTACK_CLASSES = ("prompt_injection_direct", "prompt_injection_indirect", "jailb
                   "system_prompt_extraction", "tool_abuse", "data_leakage", "unsafe_output", "misinformation", "resource_consumption")
 # Analysis classes (privacy / extraction / vector store). They are authorized in the signed scope like any other class, but they are NOT test-library
 # categories: they run through the dedicated analysis modules, each with its own hard query/token ceiling on top of the scope limits.
-ANALYSIS_CLASSES = ("model_extraction", "membership_inference", "vector_store_exposure")
+ANALYSIS_CLASSES = ("model_extraction", "membership_inference", "vector_store_exposure", "mcp_server_audit")
 VECTOR_PROVIDERS = ("chroma", "qdrant", "weaviate")
+MCP_PROVIDERS = ("mcp",)                  # an MCP server (Streamable HTTP); audited read-only, never as a chat target
 CLASS_LABEL = {
     "model_extraction": "Model extraction (budgeted)",
     "membership_inference": "Membership inference",
     "vector_store_exposure": "Vector store exposure (read-only)",
+    "mcp_server_audit": "MCP server audit (read-only)",
     "prompt_injection_direct": "Direct prompt injection",
     "prompt_injection_indirect": "Indirect prompt injection",
     "jailbreak": "Jailbreak",
@@ -30,8 +32,9 @@ CLASS_LABEL = {
     "misinformation": "Misinformation / hallucination",
     "resource_consumption": "Resource consumption",
 }
-PROVIDERS = ("openai_compat", "anthropic")
-ALL_PROVIDERS = PROVIDERS + VECTOR_PROVIDERS
+PROVIDERS = ("openai_compat", "anthropic", "http_json")
+CUSTOM_FIELDS = ("request_template", "response_path")   # only http_json endpoints carry them
+ALL_PROVIDERS = PROVIDERS + VECTOR_PROVIDERS + MCP_PROVIDERS
 
 # Hard upper bounds: a typo must not create an "unlimited" scope
 HARD_MAX = dict(max_total_tokens=5_000_000, max_requests=5000, max_requests_per_minute=600,
@@ -40,6 +43,15 @@ HARD_MAX = dict(max_total_tokens=5_000_000, max_requests=5000, max_requests_per_
 MAX_VALIDITY = timedelta(days=90)
 ADAPTIVE_ROUNDS_DEFAULT, ADAPTIVE_ROUNDS_MAX = 3, 5
 CAMPAIGN_SESSIONS_DEFAULT, CAMPAIGN_SESSIONS_MAX = 5, 10
+
+
+def _endpoint_content(e: "Endpoint") -> dict:
+    """The signed form of an endpoint. The custom HTTP fields are added only when set, so scopes signed before they existed keep their digest."""
+    d = asdict(e)
+    for k in CUSTOM_FIELDS:
+        if d[k] is None:
+            del d[k]
+    return d
 
 
 class ScopeInputError(ValueError):
@@ -55,6 +67,8 @@ class Endpoint:
     api_key_env: str | None = None      # the key itself is not stored in the scope
     ingest_url: str | None = None       # the target's document/knowledge-base upload endpoint (for indirect tests; must be authorized)
     ingest_delete_url: str | None = None  # endpoint that DELETES the uploaded document (cleanup). The '{name}' placeholder is replaced with the document name; otherwise the DELETE body is {"name": ...}
+    request_template: str | None = None   # http_json only: the JSON request body with {{prompt}} / {{messages}} / {{session_id}} placeholders
+    response_path: str | None = None      # http_json only: dotted path of the reply text in the JSON response, e.g. data.reply
 
 
 @dataclass(frozen=True)
@@ -94,7 +108,7 @@ class LLMScope:
     def validate(self) -> None:
         for f in ("name", "client", "authorized_by"):
             if not str(getattr(self, f)).strip():
-                raise ScopeInputError(f"'{f}' bos olamaz")
+                raise ScopeInputError(f"'{f}' must not be empty")
         if len(self.authorization_doc_sha256) != 32:
             raise ScopeInputError("authorization document digest (SHA-256, 32 bytes) is required")
         if self.valid_until <= self.valid_from:
@@ -115,9 +129,20 @@ class LLMScope:
                     raise ScopeInputError(f"{fld} must be http(s): {v!r}")
             if e.ingest_delete_url and not e.ingest_url:
                 raise ScopeInputError("ingest_delete_url can only be defined together with ingest_url")
-            if e.provider in VECTOR_PROVIDERS and (e.ingest_url or e.ingest_delete_url):
-                raise ScopeInputError("a vector store endpoint cannot define ingest_url / ingest_delete_url")
-            if e.provider not in VECTOR_PROVIDERS and not e.model.strip():
+            if e.provider in VECTOR_PROVIDERS + MCP_PROVIDERS and (e.ingest_url or e.ingest_delete_url):
+                raise ScopeInputError("a vector store or MCP endpoint cannot define ingest_url / ingest_delete_url")
+            if e.provider == "http_json":
+                from .customhttp import TemplateError, parse_path, parse_template
+                try:
+                    parse_template(e.request_template)
+                    parse_path(e.response_path)
+                except TemplateError as err:
+                    raise ScopeInputError(f"{e.url}: {err}") from None
+                if e.ingest_url or e.ingest_delete_url:
+                    raise ScopeInputError("a custom HTTP endpoint cannot define ingest_url / ingest_delete_url")
+            elif e.request_template is not None or e.response_path is not None:
+                raise ScopeInputError("request_template / response_path are only for custom HTTP (http_json) endpoints")
+            if e.provider not in VECTOR_PROVIDERS + MCP_PROVIDERS and e.provider != "http_json" and not e.model.strip():
                 raise ScopeInputError(f"a model name is required for the endpoint: {e.url}")
             if e.url in seen:
                 raise ScopeInputError(f"endpoint defined twice: {e.url}")
@@ -147,7 +172,7 @@ class LLMScope:
             "name": self.name, "client": self.client, "authorized_by": self.authorized_by,
             "authorization_doc_sha256": bytes(self.authorization_doc_sha256).hex(),
             "valid_from": iso(self.valid_from), "valid_until": iso(self.valid_until),
-            "endpoints": sorted((asdict(e) for e in self.endpoints), key=lambda d: d["url"]),
+            "endpoints": sorted((_endpoint_content(e) for e in self.endpoints), key=lambda d: d["url"]),
             "attack_classes": sorted(self.attack_classes),
             "limits": asdict(self.limits),
             "tool_abuse_attested": bool(self.tool_abuse_attested),

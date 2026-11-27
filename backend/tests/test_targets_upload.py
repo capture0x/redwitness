@@ -267,13 +267,13 @@ def test_quick_scan_prepare_has_no_side_effects_and_shows_the_plan(tw):
     assert r.status_code == 200, r.text
     d = r.json()
     c = d["content"]
-    assert d["cases"] == 15 and d["cases_in_library"] == 18 and d["skipped_cases"] == 3          # the three tool-abuse cases need the attestation
+    assert d["cases"] == 27 and d["cases_in_library"] == 30 and d["skipped_cases"] == 3          # the three tool-abuse cases need the attestation
     assert "tool_abuse" not in c["attack_classes"] and "adaptive_allowed" not in c and d["auth_type"] == "cookie" and d["judge_configured"] is True
     assert c["limits"]["max_total_tokens"] == 400_000 and c["endpoints"][0]["url"].endswith("/v1/chat/completions") and c["endpoints"][0]["local"] is True
     assert "abc123" not in json.dumps(d)
     assert tw.admin.get("/api/targets").json() == [] and tw.admin.get("/api/scopes").json() == [] and tw.target.calls == []
     t = tw.admin.post("/api/quick-scan/prepare", json=qbody(tw, include_tools=True, tools_attested=True), headers=H).json()
-    assert t["cases"] == 18 and "tool_abuse" in t["content"]["attack_classes"] and t["content"]["tool_abuse_attested"] is True
+    assert t["cases"] == 30 and "tool_abuse" in t["content"]["attack_classes"] and t["content"]["tool_abuse_attested"] is True
     assert tw.admin.post("/api/quick-scan/prepare", json=qbody(tw, include_tools=True), headers=H).status_code == 422           # no attestation
     assert tw.admin.post("/api/quick-scan/prepare", json=qbody(tw, base_url="ftp://x"), headers=H).status_code == 422
     assert tw.admin.post("/api/quick-scan/prepare", json=qbody(tw, auth_type="oauth"), headers=H).status_code == 422
@@ -290,7 +290,7 @@ def test_quick_scan_signs_a_scope_runs_everything_in_one_run_and_sends_the_cooki
     r = tw.admin.post("/api/quick-scan", json=qbody(tw) | go, headers=H)
     assert r.status_code == 202, r.text
     run = wait_run(tw.admin, r.json()["id"])
-    assert run["status"] in ("completed", "completed_budget") and run["config"]["cases"] == 15 and len(tw.admin.get("/api/runs").json()) == 1
+    assert run["status"] in ("completed", "completed_budget") and run["config"]["cases"] == 27 and len(tw.admin.get("/api/runs").json()) == 1
     scopes = tw.admin.get("/api/scopes").json()
     assert len(scopes) == 1 and scopes[0]["valid"] and scopes[0]["approved_by"] == "admin" and "tool_abuse" not in scopes[0]["attack_classes"]
     t = tw.admin.get("/api/targets").json()[0]

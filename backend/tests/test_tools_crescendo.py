@@ -242,7 +242,7 @@ def test_advanced_examples_are_valid_and_kept_out_of_the_owasp_kit():
     from llm_redteam import starter
     adv = {a["id"]: a for a in starter.list_advanced()}
     assert set(adv) == {"ADV_tool_sandbox", "ADV_crescendo", "ADV_markdown_exfil", "ADV_agentic", "ADV_plague_persona",
-                   "ADV_multimodal", "ADV_agentic_chain", "ADV_knowledge_map", "ADV_campaign_ladder"}
+                   "ADV_multimodal", "ADV_agentic_chain", "ADV_knowledge_map", "ADV_campaign_ladder", "ADV_jailbreak"}
     assert adv["ADV_tool_sandbox"]["features"] == ["tool sandbox"] and adv["ADV_tool_sandbox"]["needs_tool_attestation"]
     assert adv["ADV_crescendo"]["features"] == ["crescendo"] and adv["ADV_markdown_exfil"]["features"] == ["markdown leak"]
     assert len(parse_library(starter.combined_text()).cases) == 15                      # the basic OWASP kit is unchanged

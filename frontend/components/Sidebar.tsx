@@ -3,7 +3,7 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { BookOpenCheck, FlaskConical, KeyRound, LayoutDashboard, GitCompareArrows, PackageSearch, ScanEye, Crosshair, ListChecks, Layers, Boxes, LogOut, OctagonX, ScrollText, Settings, ShieldCheck, ShieldHalf, Siren, Terminal, Users } from "lucide-react";
+import { BookOpenCheck, FlaskConical, KeyRound, LayoutDashboard, GitCompareArrows, PackageSearch, Plug, ScanEye, Crosshair, ListChecks, Layers, Boxes, LogOut, OctagonX, ScrollText, Settings, ShieldCheck, ShieldHalf, Siren, Terminal, Users } from "lucide-react";
 import { useState } from "react";
 import { useMe, ROLE_LABEL, routeRole } from "@/lib/me";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
@@ -28,6 +28,7 @@ const MORE = [
     { href: "/suite", label: "AI Security Suite", icon: Boxes },
     { href: "/privacy", label: "Privacy & Extraction", icon: ScanEye },
     { href: "/model-scans", label: "Model Supply Chain", icon: PackageSearch },
+    { href: "/mcp", label: "MCP Servers", icon: Plug },
     { href: "/logs", label: "Logs", icon: Terminal },
   ] },
   { label: "Compliance", items: [

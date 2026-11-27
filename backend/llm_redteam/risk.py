@@ -7,7 +7,7 @@ DEFAULT_SEVERITY = {
     "system_prompt_extraction": "high", "data_leakage": "critical", "tool_abuse": "critical",
     "prompt_injection_direct": "high", "prompt_injection_indirect": "high", "jailbreak": "medium",
     "unsafe_output": "high", "misinformation": "medium", "resource_consumption": "medium",
-    "model_extraction": "medium", "membership_inference": "medium", "vector_store_exposure": "high",
+    "model_extraction": "medium", "membership_inference": "medium", "vector_store_exposure": "high", "mcp_server_audit": "high",
 }
 WEIGHT = {"info": 1, "low": 3, "medium": 10, "high": 25, "critical": 40}
 

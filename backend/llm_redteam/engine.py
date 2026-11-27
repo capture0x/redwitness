@@ -516,7 +516,7 @@ class Executor:
             record(turn, text, "blocked", blocked_reason=d.reason.value)
             return Outcome(error=d.reason.value, halted=d.reason if d.fatal else None)
         try:
-            reply = await (self.adapter.send(wire, grant.max_tokens, tools_defs) if tools_defs else self.adapter.send(wire, grant.max_tokens))
+            reply = await (self.adapter.send(wire, grant.max_tokens, tools_defs, session=conv) if tools_defs else self.adapter.send(wire, grant.max_tokens, session=conv))
         except TargetError as e:
             if e.kind == "blocked":                             # address refusal at connect time: the run ends
                 self.gov.refund(grant)

@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS targets (
   api_key_env TEXT, local BOOLEAN NOT NULL DEFAULT FALSE, ingest_url TEXT, ingest_delete_url TEXT, created_by TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL);
 ALTER TABLE targets ADD COLUMN IF NOT EXISTS auth_type TEXT NOT NULL DEFAULT 'bearer';
 ALTER TABLE targets ADD COLUMN IF NOT EXISTS auth_header TEXT;
+ALTER TABLE targets ADD COLUMN IF NOT EXISTS request_template TEXT;
+ALTER TABLE targets ADD COLUMN IF NOT EXISTS response_path TEXT;
 CREATE TABLE IF NOT EXISTS analyses (
   id TEXT PRIMARY KEY, kind TEXT NOT NULL, scope_id TEXT NOT NULL, endpoint_url TEXT NOT NULL, status TEXT NOT NULL,
   created_by TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL, finished_at DOUBLE PRECISION, params_json TEXT NOT NULL, result_json TEXT);
@@ -666,17 +668,18 @@ class Store:
     def add_target(self, t: dict, local: bool, by: str, key_set: bool) -> dict:
         tid = str(uuid.uuid4())
         with self.conn() as c:
-            c.execute("INSERT INTO targets (id, name, provider, base_url, request_url, model, api_key_env, local, ingest_url, ingest_delete_url, created_by, created_at, auth_type, auth_header)"
-                      " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            c.execute("INSERT INTO targets (id, name, provider, base_url, request_url, model, api_key_env, local, ingest_url, ingest_delete_url, created_by, created_at, auth_type, auth_header, request_template, response_path)"
+                      " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                       (tid, t["name"], t["provider"], t["base_url"], t["request_url"], t["model"], t["api_key_env"], local, t["ingest_url"], t["ingest_delete_url"], by, time.time(),
-                       t["auth_type"], t["auth_header"]))
+                       t["auth_type"], t["auth_header"], t.get("request_template"), t.get("response_path")))
         self.audit("target.create", actor=by, detail={"target_id": tid, "name": t["name"], "request_url": t["request_url"], "provider": t["provider"], "auth_type": t["auth_type"], "key_set": key_set})
         return self.get_target(tid)
 
     def update_target(self, tid: str, t: dict, local: bool, by: str, key_changed: bool) -> dict | None:
         with self.conn() as c:
-            n = c.execute("UPDATE targets SET name=%s, provider=%s, base_url=%s, request_url=%s, model=%s, api_key_env=%s, local=%s, ingest_url=%s, ingest_delete_url=%s, auth_type=%s, auth_header=%s WHERE id=%s",
-                          (t["name"], t["provider"], t["base_url"], t["request_url"], t["model"], t["api_key_env"], local, t["ingest_url"], t["ingest_delete_url"], t["auth_type"], t["auth_header"], tid)).rowcount
+            n = c.execute("UPDATE targets SET name=%s, provider=%s, base_url=%s, request_url=%s, model=%s, api_key_env=%s, local=%s, ingest_url=%s, ingest_delete_url=%s, auth_type=%s, auth_header=%s, request_template=%s, response_path=%s WHERE id=%s",
+                          (t["name"], t["provider"], t["base_url"], t["request_url"], t["model"], t["api_key_env"], local, t["ingest_url"], t["ingest_delete_url"], t["auth_type"], t["auth_header"],
+                           t.get("request_template"), t.get("response_path"), tid)).rowcount
         if not n:
             return None
         self.audit("target.update", actor=by, detail={"target_id": tid, "name": t["name"], "request_url": t["request_url"], "key_changed": key_changed})

@@ -457,6 +457,8 @@ def check_against_scope(lib: Library, scope: LLMScope, categories: list[str] | N
     allowed = set(scope.attack_classes) & (set(categories) if categories else set(scope.attack_classes))
     out = []
     for c in lib.cases:
+        if endpoint is not None and endpoint.provider == "http_json" and (c.tools or c.media):
+            continue                                       # a custom HTTP target has no tool-calling or file format: these cases are skipped, not failed
         if c.delivery == "ingest" and endpoint is not None and not endpoint.ingest_url:
             raise LibraryError(f"{c.id}: document upload (ingest) needs an ingest_url authorized on the scope's endpoint")
         if c.media:

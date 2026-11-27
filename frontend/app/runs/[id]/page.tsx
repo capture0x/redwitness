@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CircleStop, Download, FileDown, ShieldAlert } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, CircleStop, Download, FileDown, FileText, ShieldAlert } from "lucide-react";
+import ClientReportDialog from "@/components/ClientReportDialog";
 import FindingCard, { Untrusted } from "@/components/FindingCard";
 import PageHeader, { Notice } from "@/components/PageHeader";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -14,6 +16,7 @@ import { useMe } from "@/lib/me";
 export default function RunPage() {
   const { id } = useParams<{ id: string }>();
   const { can } = useMe();
+  const [reportOpen, setReportOpen] = useState(false);
   const { data: r, error } = usePoll(() => api(`/runs/${id}`), 2000, [id]);
   const { data: meta } = usePoll(() => api("/meta"), 0);
   const { data: reasons } = usePoll(() => api("/reasons"), 0);
@@ -31,10 +34,12 @@ export default function RunPage() {
       <PageHeader title={r.config?.library?.name || "Run"} sub={`${r.config?.model} · ${r.endpoint_url} · ${fmtDate(r.created_at)}`}
         right={<>
           <StatusBadge status={r.status} />
-          <a href={`/api/runs/${id}/report.pdf`}><Button variant="secondary" size="sm"><FileDown className="h-4 w-4" />PDF report</Button></a>
+          <Button size="sm" data-testid="client-report" disabled={r.status === "running"} onClick={() => setReportOpen(true)}><FileText className="h-4 w-4" />Client report</Button>
+          <a href={`/api/runs/${id}/report.pdf`}><Button variant="secondary" size="sm"><FileDown className="h-4 w-4" />Technical PDF</Button></a>
           <a href={`/api/runs/${id}/findings.csv`}><Button variant="secondary" size="sm"><Download className="h-4 w-4" />CSV</Button></a>
           {r.status === "running" && can("operator") && <Button variant="danger" size="sm" onClick={() => api(`/runs/${id}/stop`, { method: "POST" })}><CircleStop className="h-4 w-4" />Stop</Button>}
         </>} />
+      <ClientReportDialog open={reportOpen} onOpenChange={setReportOpen} run={r} />
       {r.config?.owasp_planned?.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">OWASP:{r.config.owasp_planned.map((c: string) => <Badge key={c} tone="violet">{c.split("_")[0]}</Badge>)}
         {r.config.owasp_skipped?.length > 0 && <span className="text-amber-300">· skipped (not allowed by the scope): {r.config.owasp_skipped.map((c: string) => c.split("_")[0]).join(", ")}</span>}</div>}
       {r.attempts.some((a: any) => a.outcome === "cleanup_failed") && <Notice tone="red"><b>Document cleanup failed:</b> {r.attempts.filter((a: any) => a.outcome === "cleanup_failed").length} document(s) uploaded to the target could not be deleted (the reason is on each row). Clean up the remaining documents on the target manually.</Notice>}

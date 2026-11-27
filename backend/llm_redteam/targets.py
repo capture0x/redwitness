@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import httpcore
 import httpx
 
+from . import customhttp
 from .evaluator import Untrusted, clean_untrusted
 from .netcheck import PinError, default_resolver, pin_address
 from .scope import Endpoint
@@ -90,8 +91,10 @@ class TargetAdapter:
                  max_bytes: int = 1_000_000, max_stream_seconds: float = 120.0, rng: random.Random | None = None,
                  pin_resolver=default_resolver, on_pin=None, logprobs: bool = False):
         self._cred = api_key if isinstance(api_key, Credential) else None
-        self.ep, self._key, self.stream = endpoint, (None if self._cred else api_key), stream
+        self.custom = endpoint.provider == "http_json"
+        self.ep, self._key, self.stream = endpoint, (None if self._cred else api_key), stream and not self.custom   # custom HTTP: no streaming
         self.logprobs = logprobs and endpoint.provider == "openai_compat" and not stream
+        self._sessions: dict[str, str] = {}                     # conversation -> random session id sent to a custom HTTP target
         # The default client pins to the IP (DNS-rebinding protection). If `http` is passed in from outside (tests) there is no pinning.
         self._http = http or pinned_client(endpoint.local, pin_resolver, on_pin)
         self._own_http = http is None
@@ -111,6 +114,8 @@ class TargetAdapter:
     # ------------------------------------------------------------ building requests
     def _headers(self) -> dict:
         h = {"content-type": "application/json", "accept": "text/event-stream" if self.stream else "application/json"}
+        if self.custom:
+            h["accept"] = "application/json, text/plain;q=0.5"
         if self.ep.provider == "anthropic":
             h["anthropic-version"] = ANTHROPIC_VERSION
         if self._cred:                                          # cookie / custom header
@@ -122,7 +127,15 @@ class TargetAdapter:
             h["authorization"] = f"Bearer {self._key}"
         return h
 
-    def _body(self, messages: list[dict], max_tokens: int, tools: list[dict] | None = None) -> dict:
+    def _session(self, conversation: str | None) -> str:
+        import uuid
+        if conversation is None:
+            return uuid.uuid4().hex
+        return self._sessions.setdefault(conversation, uuid.uuid4().hex)
+
+    def _body(self, messages: list[dict], max_tokens: int, tools: list[dict] | None = None, session: str | None = None) -> dict:
+        if self.custom:                                          # the signed template decides the whole body; tools are never sent
+            return customhttp.render(self.ep.request_template, messages, self._session(session))
         b = {"model": self.ep.model, "max_tokens": max_tokens, "messages": messages}
         if tools:
             b["tools"] = tools
@@ -140,8 +153,11 @@ class TargetAdapter:
         return min(self.backoff_cap, self.backoff_base * (2 ** attempt)) * (0.5 + self._rng.random() / 2)
 
     # ------------------------------------------------------------ sending
-    async def send(self, messages: list[dict], max_tokens: int, tools: list[dict] | None = None) -> Reply:
-        reply = await self._retry(lambda: self._once(messages, max_tokens, tools))
+    async def send(self, messages: list[dict], max_tokens: int, tools: list[dict] | None = None, session: str | None = None) -> Reply:
+        """session: the conversation this turn belongs to (custom HTTP targets get one stable {{session_id}} per conversation)."""
+        if tools and self.custom:
+            raise TargetError("client", "a custom HTTP target has no tool-calling format")
+        reply = await self._retry(lambda: self._once(messages, max_tokens, tools, session))
         return reply
 
     async def ingest(self, name: str, content: str, *, data: bytes | None = None, content_type: str | None = None) -> None:
@@ -205,8 +221,11 @@ class TargetAdapter:
         finally:
             await resp.aclose()
 
-    async def _once(self, messages, max_tokens, tools=None) -> Reply:
-        return await self._post(self.ep.url, self._body(messages, max_tokens, tools), self._handle)
+    async def _once(self, messages, max_tokens, tools=None, session=None) -> Reply:
+        body = self._body(messages, max_tokens, tools, session)
+        if self.custom:
+            self._est_in = len(json.dumps(body, ensure_ascii=False)) // 4 + 1
+        return await self._post(self.ep.url, body, self._handle)
 
     async def _once_ingest(self, name, content, data=None, content_type=None) -> None:
         async def handle(resp):
@@ -262,6 +281,10 @@ class TargetAdapter:
 
     # ------------------------------------------------------------ REST parsing
     def _parse_json(self, d: dict) -> Reply:
+        if self.custom:                                          # no usage block: token counts are estimates
+            r = self._reply(customhttp.extract(d, self.ep.response_path), [], getattr(self, "_est_in", 0), None, "")
+            r.estimated = True
+            return r
         if self.ep.provider == "anthropic":
             text = "".join(b.get("text", "") for b in d["content"] if b.get("type") == "text")
             calls = [{"id": b.get("id"), "name": b.get("name"), "arguments": b.get("input")} for b in d["content"] if b.get("type") == "tool_use"]

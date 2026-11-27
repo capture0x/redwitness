@@ -31,6 +31,7 @@ export AIVERITX_ADMIN_PASSWORD="e2e-admin-password-1"
 export NEXT_TELEMETRY_DISABLED=1 ANTHROPIC_API_KEY="" AIVERITX_ALLOWED_HOSTS="localhost"
 
 start python3 "$ROOT/sandbox/mock_llm.py" --port 9100
+start python3 "$ROOT/sandbox/mock_mcp.py" --port 9400
 mkdir -p "$WORK/jobs/in" "$WORK/jobs/out"; export AIVERITX_SANDBOX_DIR="$WORK/jobs"
 start env RUNNER_JOBS="$WORK/jobs" python3 "$ROOT/runner/runner.py"
 if [ "$MODE" = ollama ]; then
@@ -41,7 +42,7 @@ fi
 # `env -C` changes the directory; Next.js is started directly with node (npx creates no intermediate process, a single PID).
 start env -C "$ROOT/backend" .venv/bin/python -m uvicorn main:create_app --factory --host 127.0.0.1 --port 8000 --log-level warning
 start env -C "$ROOT/frontend" node node_modules/next/dist/bin/next start -p 3000
-waitport 9100 && waitport 8000 && waitport 3000 || { echo "INFRASTRUCTURE DID NOT START"; for f in "$WORK"/*.log; do echo "--- $f"; tail -n 5 "$f"; done; exit 2; }
+waitport 9100 && waitport 9400 && waitport 8000 && waitport 3000 || { echo "INFRASTRUCTURE DID NOT START"; for f in "$WORK"/*.log; do echo "--- $f"; tail -n 5 "$f"; done; exit 2; }
 [ "$MODE" = ollama ] && { waitport 9200 || exit 2; }
 
 cd "$ROOT/frontend"

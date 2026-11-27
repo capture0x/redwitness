@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, Play, ScanSearch, ShieldCheck } from "lucide-react";
 import AuthFields from "@/components/AuthFields";
+import CustomHttpFields from "@/components/CustomHttpFields";
 import { Notice } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,10 @@ import { Check_ } from "@/components/ui/misc";
 import { api, fmtNum, usePoll } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { getPref, ONBOARDING_ACTIVE } from "@/lib/prefs";
-import { PRESETS, requestUrl } from "@/lib/targets";
+import { DEFAULT_PATH, DEFAULT_TEMPLATE, PRESETS, pathError, requestUrl, templateError } from "@/lib/targets";
 import { cn } from "@/lib/utils";
 
-const EMPTY = { base_url: "", model: "", provider: "openai_compat", auth_type: "bearer", auth_header: "", api_key: "" };
+const EMPTY = { base_url: "", model: "", provider: "openai_compat", auth_type: "bearer", auth_header: "", api_key: "", request_template: "", response_path: "" };
 
 /** URL + credential, then Review (shows exactly what will be signed) and Start. It still creates and signs a normal short-lived scope; nothing is loosened. */
 export default function QuickScan() {
@@ -44,9 +45,12 @@ export default function QuickScan() {
   const [busy, setBusy] = useState("");
   const set = (k: string, v: any) => { setF((p: any) => ({ ...p, [k]: v })); setPlan(null); setAuth(false); };
   const saved = (targets || []).find((t: any) => t.id === targetId);
-  const body = () => ({ ...(targetId ? { target_id: targetId, api_key: f.api_key || null } : { base_url: f.base_url, model: f.model, provider: f.provider, auth_type: f.auth_type, auth_header: f.auth_type === "header" ? (f.auth_header || "Authorization") : null, api_key: f.api_key || null }),
+  const custom = !targetId && f.provider === "http_json";
+  const customOk = !custom || (!templateError(f.request_template) && !pathError(f.response_path));
+  const body = () => ({ ...(targetId ? { target_id: targetId, api_key: f.api_key || null } : { base_url: f.base_url, model: f.model, provider: f.provider, auth_type: f.auth_type, auth_header: f.auth_type === "header" ? (f.auth_header || "Authorization") : null, api_key: f.api_key || null,
+      ...(custom ? { request_template: f.request_template, response_path: f.response_path.trim() } : {}) }),
     include_tools: tools, tools_attested: tools && attest, ...(allOn ? {} : { owasp: chosen }) });
-  const canReview = (targetId || (f.base_url.trim() && f.model.trim())) && (!tools || attest) && chosen.length > 0;
+  const canReview = (targetId || (f.base_url.trim() && (custom || f.model.trim()))) && customOk && (!tools || attest) && chosen.length > 0;
 
   const review = async () => { setErr(""); setBusy("review"); try { setPlan(await api("/quick-scan/prepare", { method: "POST", body: JSON.stringify(body()) })); setAuth(false); } catch (e: any) { setErr(e.message); } finally { setBusy(""); } };
   const start = async () => {
@@ -60,7 +64,7 @@ export default function QuickScan() {
   return (
     <Card data-testid="quick-scan"><CardContent className="space-y-6 p-7">
       <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/30 to-blue-500/20 text-violet-200"><ScanSearch className="h-5 w-5" /></div>
-        <div><div className="text-lg font-semibold text-white">Scan a target</div><p className="text-sm text-slate-400">Enter the address and how to sign in. AIVeritX runs the whole OWASP LLM Top 10 kit plus Crescendo and Markdown-leak checks (and tool abuse if you attest below) in one run. It still creates a short-lived signed scope for you; you review it first.</p></div></div>
+        <div><div className="text-lg font-semibold text-white">Scan a target</div><p className="text-sm text-slate-400">Enter the address and how to sign in. AIVeritX runs the whole OWASP LLM Top 10 kit plus Crescendo, Markdown-leak and 12 jailbreak-technique checks (and tool abuse if you attest below) in one run. It still creates a short-lived signed scope for you; you review it first.</p></div></div>
 
       {err && <Notice tone="red">{err}</Notice>}
       {system && !system.judge_configured && <Notice tone="amber"><b>The judge model is not set up.</b> Put its API key in your .env file, then choose the model under <Link href="/settings" className="underline">Settings → Judge LLM</Link>.</Notice>}
@@ -70,9 +74,11 @@ export default function QuickScan() {
           <NativeSelect data-testid="qs-target" value={targetId} onChange={(e) => { setTargetId(e.target.value); setPlan(null); setAuth(false); }}>
             <option value="">New target (enter the address below)</option>{(targets || []).map((t: any) => <option key={t.id} value={t.id}>{t.name} · {t.model}</option>)}</NativeSelect></div>
         {!targetId && <>
-          <div className="md:col-span-2 flex flex-wrap gap-2">{Object.entries(PRESETS).filter(([k]) => k !== "custom").map(([id, p]) => <button key={id} onClick={() => { setF((x: any) => ({ ...x, provider: p.provider, base_url: p.base_url, model: p.model })); setPlan(null); }} className="rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-white">{p.label}</button>)}</div>
-          <div><Label help="The address of the API you want to scan, for example https://api.openai.com/v1. You must be allowed to test it.">Base URL</Label><Input data-testid="qs-url" value={f.base_url} onChange={(e) => set("base_url", e.target.value)} placeholder="https://api.openai.com/v1" />{f.base_url && <Hint>Requests go to <span className="font-mono text-slate-300">{requestUrl(f.provider, f.base_url)}</span></Hint>}</div>
-          <div><Label help="The model id that API expects, such as gpt-4o or llama3.2.">Model name</Label><Input data-testid="qs-model" value={f.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. gpt-4o" /></div>
+          <div className="md:col-span-2 flex flex-wrap gap-2">{Object.entries(PRESETS).filter(([k]) => k !== "custom").map(([id, p]) => <button key={id} data-testid={`qs-preset-${id}`} onClick={() => { setF((x: any) => ({ ...x, provider: p.provider, base_url: p.base_url, model: p.model, ...(p.provider === "http_json" && !x.request_template ? { request_template: DEFAULT_TEMPLATE, response_path: DEFAULT_PATH } : {}) })); setPlan(null); }} className="rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-white">{p.label}</button>)}</div>
+          <div><Label help={custom ? "The full address your app POSTs chat messages to, for example https://app.example.com/api/chat. You must be allowed to test it." : "The address of the API you want to scan, for example https://api.openai.com/v1. You must be allowed to test it."}>{custom ? "Request URL" : "Base URL"}</Label><Input data-testid="qs-url" value={f.base_url} onChange={(e) => set("base_url", e.target.value)} placeholder={custom ? "https://app.example.com/api/chat" : "https://api.openai.com/v1"} />{f.base_url && !custom && <Hint>Requests go to <span className="font-mono text-slate-300">{requestUrl(f.provider, f.base_url)}</span></Hint>}</div>
+          <div><Label help={custom ? "Optional: a label for lists and reports." : "The model id that API expects, such as gpt-4o or llama3.2."}>{custom ? "Model label (optional)" : "Model name"}</Label><Input data-testid="qs-model" value={f.model} onChange={(e) => set("model", e.target.value)} placeholder={custom ? "e.g. support-bot" : "e.g. gpt-4o"} /></div>
+          {custom && <div className="md:col-span-2"><CustomHttpFields testPrefix="qs" url={f.base_url} template={f.request_template} path={f.response_path} onChange={(k, v) => set(k, v)}
+            onImport={(r) => { setF((p: any) => ({ ...p, base_url: r.url, request_template: r.template, ...(r.secret ? { auth_type: r.auth_type, auth_header: r.auth_header, api_key: r.secret } : {}) })); setPlan(null); setAuth(false); }} /></div>}
           <div className="md:col-span-2"><AuthFields testPrefix="qs" authType={f.auth_type} authHeader={f.auth_header} secret={f.api_key} onChange={(k, v) => set(k, v)} /></div></>}
         {targetId && saved && <div className="md:col-span-2 text-xs text-slate-400">Uses the saved target <span className="font-mono text-slate-300">{saved.request_url}</span>{saved.has_key ? " and its key held in memory." : saved.api_key_env ? ` and the key from $${saved.api_key_env}.` : "."}
           <div className="mt-3"><Label>Credential (optional: replaces the one held in memory)</Label><Input type="password" autoComplete="off" value={f.api_key} onChange={(e) => set("api_key", e.target.value)} /></div></div>}
@@ -95,11 +101,11 @@ export default function QuickScan() {
           <div className="text-sm font-medium text-white">Review: this is exactly what will be signed and run</div>
           <div className="grid gap-3 md:grid-cols-4 text-sm">
             <div><div className="text-[11px] uppercase tracking-wider text-slate-500">Target</div><div className="break-all font-mono text-xs text-slate-200">{plan.request_url}</div></div>
-            <div><div className="text-[11px] uppercase tracking-wider text-slate-500">Tests</div><div className="text-slate-200">{plan.cases} cases{` · ${plan.categories_planned.length} categor${plan.categories_planned.length === 1 ? "y" : "ies"}`}{plan.skipped_cases ? <span className="text-slate-500"> ({plan.skipped_cases} skipped: not authorized)</span> : null}</div></div>
+            <div><div className="text-[11px] uppercase tracking-wider text-slate-500">Tests</div><div className="text-slate-200">{plan.cases} cases{` · ${plan.categories_planned.length} categor${plan.categories_planned.length === 1 ? "y" : "ies"}`}{plan.skipped_cases ? <span className="text-slate-500" title={plan.skip_note}> ({plan.skipped_cases} skipped: {[plan.skipped_unauthorized ? `${plan.skipped_unauthorized} not authorized` : "", plan.skipped_format ? `${plan.skipped_format} need fake tools or files, which a custom HTTP API cannot take` : ""].filter(Boolean).join(", ") || "not authorized"})</span> : null}</div></div>
             <div><div className="text-[11px] uppercase tracking-wider text-slate-500">Valid for</div><div className="text-slate-200">7 days</div></div>
             <div><div className="text-[11px] uppercase tracking-wider text-slate-500">Budget</div><div className="text-slate-200">{fmtNum(plan.content.limits.max_total_tokens)} tokens · {plan.content.limits.max_requests} requests</div></div></div>
           <div className="flex flex-wrap gap-1.5">{plan.content.attack_classes.map((c: string) => <Badge key={c} tone="violet">{c.replace(/_/g, " ")}</Badge>)}{plan.local && <Badge tone="amber">local / private network</Badge>}{plan.content.adaptive_allowed ? null : <Badge>no adaptive rewriting</Badge>}</div>
-          {plan.categories_skipped?.length > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100" data-testid="qs-skipped">Not run: {plan.categories_skipped.map((c: string) => c.split("_")[0]).join(", ")}. Tool-abuse categories need the test-environment attestation above; they stay “Not tested” in the matrix.</div>}
+          {plan.categories_skipped?.length > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100" data-testid="qs-skipped">Not run: {plan.categories_skipped.map((c: string) => c.split("_")[0]).join(", ")}. {plan.skip_note || "Tool-abuse categories need the test-environment attestation above."} They stay “Not tested” in the matrix.</div>}
           <div className="font-mono text-[11px] text-slate-500">digest {plan.digest}</div>
           <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-slate-200"><Check_ checked={auth} onCheckedChange={(v) => setAuth(!!v)} data-testid="qs-authorized" />
             <span>I am authorized to test this target. I understand AIVeritX will send many test requests to it, within the limits above, and that this confirmation is recorded in the audit log.</span></label>

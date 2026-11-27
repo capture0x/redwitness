@@ -3,7 +3,7 @@ import ipaddress
 import re
 from urllib.parse import urlsplit
 
-PROVIDERS = ("openai_compat", "anthropic")
+PROVIDERS = ("openai_compat", "anthropic", "http_json")
 AUTH_TYPES = ("bearer", "cookie", "header")
 FORBIDDEN_HEADERS = {"host", "content-length", "content-type", "accept", "transfer-encoding", "connection", "upgrade", "te", "trailer", "keep-alive", "expect",
                      "proxy-connection", "proxy-authorization", "anthropic-version", "cookie", "set-cookie", "origin"}
@@ -16,8 +16,10 @@ class TargetInputError(ValueError):
 
 def request_url(provider: str, base_url: str) -> str:
     """The full request address from the base address. OpenAI-compatible servers (OpenAI, Ollama, vLLM, LM Studio ...): <base>/chat/completions.
-    Anthropic: <base>/v1/messages. A full request address is accepted as it is."""
+    Anthropic: <base>/v1/messages. A full request address is accepted as it is. Custom HTTP (http_json): the address is used exactly as given."""
     b = base_url.strip().rstrip("/")
+    if provider == "http_json":
+        return base_url.strip()
     if provider == "anthropic":
         return b if b.endswith("/messages") else b + ("/messages" if b.endswith("/v1") else "/v1/messages")
     return b if b.endswith("/chat/completions") else b + "/chat/completions"
@@ -64,12 +66,25 @@ def clean_header_name(name: str | None) -> str:
 
 
 def validate(name: str, provider: str, base_url: str, model: str, api_key_env: str | None, ingest_url: str | None, ingest_delete_url: str | None,
-             auth_type: str = "bearer", auth_header: str | None = None) -> dict:
+             auth_type: str = "bearer", auth_header: str | None = None, request_template: str | None = None, response_path: str | None = None) -> dict:
     name, model = " ".join((name or "").split()), (model or "").strip()
     if not 1 <= len(name) <= 80:
         raise TargetInputError("name: 1-80 characters")
     if provider not in PROVIDERS:
         raise TargetInputError(f"provider must be one of {PROVIDERS}")
+    if provider == "http_json":
+        from .customhttp import TemplateError, parse_path, parse_template
+        model = model or "custom"                                   # a custom API usually has no model name; it is only a label here
+        try:
+            parse_template(request_template)
+            parse_path(response_path)
+        except TemplateError as e:
+            raise TargetInputError(str(e)) from None
+        if ingest_url or ingest_delete_url:
+            raise TargetInputError("document upload is not available for a custom HTTP target")
+        request_template, response_path = request_template.strip(), response_path.strip()
+    else:
+        request_template = response_path = None
     if not model or len(model) > 200:
         raise TargetInputError("model name: 1-200 characters")
     base_url = (base_url or "").strip()
@@ -85,7 +100,8 @@ def validate(name: str, provider: str, base_url: str, model: str, api_key_env: s
         raise TargetInputError(f"auth type must be one of {AUTH_TYPES}")
     header = clean_header_name(auth_header) if auth_type == "header" else None
     return {"name": name, "provider": provider, "auth_type": auth_type, "auth_header": header, "base_url": base_url, "request_url": request_url(provider, base_url), "model": model,
-            "api_key_env": api_key_env or None, "ingest_url": ingest_url or None, "ingest_delete_url": ingest_delete_url or None}
+            "api_key_env": api_key_env or None, "ingest_url": ingest_url or None, "ingest_delete_url": ingest_delete_url or None,
+            "request_template": request_template, "response_path": response_path}
 
 
 def default_name(base_url: str, model: str) -> str:

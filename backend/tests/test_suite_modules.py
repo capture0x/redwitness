@@ -548,7 +548,7 @@ def test_shipped_examples_parse_and_stay_out_of_the_quick_scan():
     assert "knowledge map" in adv["ADV_knowledge_map"]["features"]
     assert "multi-session campaign" in adv["ADV_campaign_ladder"]["features"] and adv["ADV_campaign_ladder"]["needs_campaign"]
     quick = parse_library(starter.quick_scan_text())
-    assert len(quick.cases) == 18 and not {c.case_type for c in quick.cases} & {"multimodal", "agentic_chain", "knowledge_map"} and not any(c.campaign for c in quick.cases)
+    assert len(quick.cases) == 30 and not {c.case_type for c in quick.cases} & {"multimodal", "agentic_chain", "knowledge_map"} and not any(c.campaign for c in quick.cases)
 
 
 def test_shipped_multimodal_image_reads_back_through_the_pre_processing():

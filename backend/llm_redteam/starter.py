@@ -65,6 +65,7 @@ def list_advanced() -> list[dict]:
                                        | {"agentic (ASI)" for c in lib.cases if c.asi_category}
                                        | {"multimodal carrier" for c in lib.cases if c.media} | {"agentic chain" for c in lib.cases if c.steps}
                                        | {"knowledge map" for c in lib.cases if c.nodes} | {"multi-session campaign" for c in lib.cases if c.campaign}
+                                       | {"jailbreak techniques" for c in lib.cases if c.category == "jailbreak"}
                                        | {"adaptive " + c.adaptive.method for c in lib.cases if c.adaptive and c.adaptive.method != "rewrite"}),
                     "needs_tool_attestation": any(c.category == "tool_abuse" for c in lib.cases),
                     "needs_multimodal": any(c.media for c in lib.cases), "needs_campaign": any(c.campaign for c in lib.cases)})
@@ -78,7 +79,7 @@ QUICK_NAME = "Quick scan: OWASP kit + advanced examples"
 
 
 def quick_scan_text() -> str:
-    """The library behind the one-screen quick scan: every OWASP starter case plus the advanced examples (tool sandbox, Crescendo, Markdown leak).
+    """The library behind the one-screen quick scan: every OWASP starter case plus the advanced examples (tool sandbox, Crescendo, Markdown leak, jailbreak techniques).
     Deterministic, so the same content always has the same SHA-256. Cases whose attack class the signed scope does not allow are skipped at run start."""
     d = json.loads(combined_text())
     for f in sorted(ADV_DIR.glob("ADV_*.json")):
@@ -89,5 +90,5 @@ def quick_scan_text() -> str:
     if len(ids) != len(set(ids)):
         raise LibraryError("quick scan library has duplicate case ids")
     d["library"] = {"name": QUICK_NAME, "version": d["library"]["version"],
-                    "description": "All OWASP LLM Top 10 starter probes plus tool-abuse (fake tools), Crescendo and Markdown-leak examples. Basic quality probes; not a certificate."}
+                    "description": "All OWASP LLM Top 10 starter probes plus tool-abuse (fake tools), Crescendo, Markdown-leak and jailbreak-technique examples. Basic quality probes; not a certificate."}
     return json.dumps(d, ensure_ascii=False, indent=1) + "\n"

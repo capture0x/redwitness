@@ -167,6 +167,22 @@ async function runMock() {
   if (pdfText) check("PDF content: risk score, finding ids and library name are present", /Risk score/.test(pdfText) && pdfText.includes("tool-001") && pdfText.includes("sys-001") && pdfText.includes("E2E QA Suite"));
   const csv = await page.request.get(`${BASE}/api/runs/${run1}/findings.csv`); const rows = (await csv.text()).replace(/^﻿/, "").trim().split("\r\n");
   check("CSV report: header + 7 finding rows", csv.status() === 200 && rows.length === 8, String(rows.length));
+  // --- client-ready pentest report through the UI dialog (PDF) and the API (DOCX)
+  await page.goto(`${BASE}/runs/${run1}`, { waitUntil: "networkidle" });
+  await page.click('[data-testid="client-report"]');
+  await page.fill('[data-testid="cr-client"]', "E2E Client Ltd");
+  await page.fill('[data-testid="cr-tester"]', "E2E Tester");
+  await shot("15b-client-report-dialog");
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="cr-download"]')]);
+  await dl.saveAs(`${OUT}/client-report.pdf`);
+  const crBuf = fs.readFileSync(`${OUT}/client-report.pdf`);
+  check("client report: the dialog downloads a valid PDF", crBuf.subarray(0, 5).toString() === "%PDF-" && dl.suggestedFilename().startsWith("pentest-report-"), dl.suggestedFilename());
+  let crText = ""; try { crText = execFileSync("pdftotext", [`${OUT}/client-report.pdf`, "-"], { encoding: "utf8" }); } catch { /* poppler missing */ }
+  if (crText) check("client report: cover, finding ids, steps to reproduce and remediation are present",
+    ["AI Penetration Test Report", "E2E Client Ltd", "E2E Tester", "AIX-001", "Steps to reproduce", "Remediation", "Scope and authorization"].every((w) => crText.includes(w)));
+  const docx = await page.request.post(`${BASE}/api/client-report`, { headers: { "content-type": "application/json", "x-aiveritx-csrf": "1" }, data: JSON.stringify({ run_ids: [run1], format: "docx" }) });
+  const docxBuf = await docx.body();
+  check("client report: the DOCX export is a Word document", docx.status() === 200 && docxBuf.subarray(0, 2).toString() === "PK" && docxBuf.length > 5000, `${docx.status()} ${docxBuf.length}`);
   await logout();
 
   // --- scope limit: a second scope with a small budget → planned/hard stop (API)
@@ -323,6 +339,29 @@ async function runOwaspSection() {
   await page.getByRole("button", { name: /Start OWASP scan/ }).first().click(); await sleep(800);
   check("the OWASP scan dialog offers 'Scan it by URL instead' next to the scope", (await page.locator("[role=dialog] a:has-text('Scan it by URL instead')").count()) === 1);
   await page.keyboard.press("Escape");
+  // --- custom HTTP API target: import a copied cURL request, preview locally, review the signed plan (nothing is sent before signing)
+  await page.goto(BASE + "/new"); await sleep(1000);
+  await page.getByTestId("qs-preset-http_json").click();
+  await page.getByTestId("qs-curl-toggle").click();
+  await page.getByTestId("qs-curl").fill(`curl '${MOCK}/custom/chat' -H 'content-type: application/json' -b 'sid=e2e-custom-5150' --data-raw $'{"message":"Hello there","session_id":"abc-1","channel":"web"}'`);
+  await page.getByTestId("qs-curl-typed").fill("Hello there");
+  await page.getByTestId("qs-curl-import").click(); await page.waitForSelector("[data-testid=qs-curl-result]");
+  const ctpl = JSON.parse(await page.getByTestId("qs-template").inputValue());
+  check("cURL import fills the URL, the template ({{prompt}} and {{session_id}}) and clears the pasted command",
+    (await page.getByTestId("qs-url").inputValue()) === `${MOCK}/custom/chat` && ctpl.message === "{{prompt}}" && ctpl.session_id === "{{session_id}}" && ctpl.channel === "web" && (await page.getByTestId("qs-curl").inputValue()) === "");
+  await page.getByTestId("qs-path").fill("reply");
+  const callsBefore = (await (await fetch(`${MOCK}/stats`)).json()).requests;
+  await page.getByTestId("qs-preview").click();
+  check("Preview request shows the body locally", (await page.getByTestId("qs-preview-body").innerText()).includes('"message": "Hello, what can you help me with?"'));
+  await page.getByTestId("qs-review").click(); await page.waitForSelector("[data-testid=qs-plan]", { timeout: 15000 }); await shot("31b-quick-scan-custom-http");
+  const cplan = await page.getByTestId("qs-plan").innerText();
+  check("the custom HTTP plan names the target and skips the fake-tool case with the reason", cplan.includes(`${MOCK}/custom/chat`) && /skipped/.test(cplan));
+  check("preview and review sent nothing to the target", (await (await fetch(`${MOCK}/stats`)).json()).requests === callsBefore);
+  // --- MCP Servers page (the read-only audit itself runs in the module E2E)
+  check("the sidebar has the MCP Servers page", (await page.locator("nav a[href='/mcp']").count()) === 1);
+  await page.goto(BASE + "/mcp"); await sleep(1200); await shot("31c-mcp-page");
+  check("the MCP page explains how to authorize a server when no scope covers one",
+    (await page.getByTestId("mcp-no-scope").count()) === 1 && (await page.locator("main").innerText()).includes("never calls a tool"));
   await logout();
 
   // --- Compliance suite: benchmark import (UI), AISVS/benchmark-filtered run, dashboards, badges

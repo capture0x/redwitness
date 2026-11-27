@@ -175,7 +175,7 @@ stateDiagram-v2
 | **Test library** | `library.py`, `starter.py` | Validates external JSON/YAML cases and converts them to an executable form | Interpret content or produce strategy |
 | **Orchestration engine** | `engine.py` | Drives the state machine: send, evaluate, replay, record | Know any bypass technique; the library decides the next step |
 | **Governor** | `governor.py`, `netcheck.py` | Authorizes every request to the target; limits, circuit breaker, budget | Look at test content |
-| **Target adapter** | `targets.py` | Talks to the target (REST/SSE), error handling, IP pinning, document upload/delete | Make decisions |
+| **Target adapter** | `targets.py`, `customhttp.py` | Talks to the target (REST/SSE, or a custom JSON API through the signed request template and response path), error handling, IP pinning, document upload/delete | Make decisions |
 | **Evaluator** | `evaluator.py`, `judges.py` | Asks the judge LLM about the response; **validates** its output | Send requests to the target; it has no tools |
 | **OWASP** | `owasp.py`, `starter.py` | The 2025 taxonomy, legacy id aliases, the starter kit | Issue certificates |
 | **Reports** | `reports.py` | PDF/CSV; the OWASP summary | Fetch external resources |
