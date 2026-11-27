@@ -1,5 +1,5 @@
 """
-AIVeritX API (FastAPI). Run:  AIVERITX_SCOPE_KEYS=k1:<64 hex> uvicorn main:create_app --factory --host 127.0.0.1 --port 8000
+RedWitness API (FastAPI). Run:  REDWITNESS_SCOPE_KEYS=k1:<64 hex> uvicorn main:create_app --factory --host 127.0.0.1 --port 8000
 Bind to localhost only. API keys are NEVER written to the database/logs.
 """
 import asyncio
@@ -369,16 +369,16 @@ class OwnPasswordIn(BaseModel):
 def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_factory=None,
                adapter_factory=None, auth: Auth | None = None, attacker_factory=None, remediator_factory=None, vector_factory=None, verifier_factory=None, sandbox_factory=None,
                mcp_factory=None) -> FastAPI:
-    dsn = dsn or os.environ.get("AIVERITX_DATABASE_URL")
+    dsn = dsn or os.environ.get("REDWITNESS_DATABASE_URL")
     if not dsn:
-        raise RuntimeError("AIVERITX_DATABASE_URL is required (postgresql://user:password@host/database)")
+        raise RuntimeError("REDWITNESS_DATABASE_URL is required (postgresql://user:password@host/database)")
     store = Store(dsn)
     ring = keyring if keyring is not None else Keyring.from_env()
     auth = auth if auth is not None else Auth.from_env()
     judge_factory = judge_factory or (lambda settings: build_judge(settings))
     attacker_factory = attacker_factory or (lambda settings: build_attacker_llm(settings))
     remediator_factory = remediator_factory or (lambda settings: build_remediator_llm(settings))
-    sandbox_factory = sandbox_factory or (lambda: sandbox_mod.FileRunner(os.environ.get("AIVERITX_SANDBOX_DIR", "/sandbox-jobs")))
+    sandbox_factory = sandbox_factory or (lambda: sandbox_mod.FileRunner(os.environ.get("REDWITNESS_SANDBOX_DIR", "/sandbox-jobs")))
     verifier_factory = verifier_factory or (lambda settings: build_role_llm(settings, "verifier"))
     adapter_factory = adapter_factory or (lambda ep, key, stream: TargetAdapter(ep, key, stream=stream))
     vector_factory = vector_factory or (lambda ep, gov: VectorProbe(ep, gov))
@@ -416,8 +416,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
                     return Credential(t["auth_type"], targetcfg.clean_credential(t["auth_type"], env), t.get("auth_header") or "Authorization")
         return env
 
-    app = FastAPI(title="AIVeritX", version="1.0.0")
-    hosts = ["localhost", "127.0.0.1", "testserver"] + [h for h in os.environ.get("AIVERITX_ALLOWED_HOSTS", "").split(",") if h]
+    app = FastAPI(title="RedWitness", version="1.0.0")
+    hosts = ["localhost", "127.0.0.1", "testserver"] + [h for h in os.environ.get("REDWITNESS_ALLOWED_HOSTS", "").split(",") if h]
     app.state.store, app.state.keyring, app.state.live, app.state.auth = store, ring, live, auth
 
     @app.middleware("http")
@@ -471,7 +471,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             store.audit("auth.failure", actor=body.username[:40], detail={"status": e.status})
             raise HTTPException(e.status, {"message": e.message, "reason": "AUTH"}) from None
         response.set_cookie(COOKIE, token, httponly=True, samesite="strict", path="/", max_age=auth.ttl,
-                            secure=os.environ.get("AIVERITX_COOKIE_SECURE") == "1")
+                            secure=os.environ.get("REDWITNESS_COOKIE_SECURE") == "1")
         store.touch_login(user["username"])
         store.audit("auth.login", actor=user["username"], detail={"role": user["role"]})
         return {"ok": True, "user": {"username": user["username"], "role": user["role"]}}
@@ -556,7 +556,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
                 "judge_provider": s["judge_provider"], "attacker_configured": attacker_factory(s)[0] is not None, "remediator_configured": remediator_factory(s)[0] is not None, "judge_advisory": judge_advisory(s), "live_runs": len(live),
                 "audit_chain_ok": store.audit_verify() is None,
                 "sandbox_enabled": s["sandbox_verifier_enabled"], "sandbox_runner_up": bool(s["sandbox_verifier_enabled"] and sandbox_factory().available()),
-                "warnings": (["Authentication is OFF (AIVERITX_INSECURE_NO_AUTH=1): for local development only."] if auth.insecure else [])
+                "warnings": (["Authentication is OFF (REDWITNESS_INSECURE_NO_AUTH=1): for local development only."] if auth.insecure else [])
                             + ([] if ring.can_sign else ["No signing key: scopes cannot be signed and runs cannot be started."])
                             + ([] if judge_ok else ["The judge LLM is not configured (Settings)."])}
 
@@ -958,7 +958,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         if body.include_tools and not body.tools_attested:
             bad(422, "Tool-abuse checks need the attestation that the target's tools run in a test environment.")
         classes = QUICK_CLASSES + (["tool_abuse"] if body.include_tools else [])
-        doc = hashlib.sha256(f"AIVeritX quick-scan authorization statement\nstated by: {user}\ntarget: {tf['request_url']}\n".encode()).hexdigest()
+        doc = hashlib.sha256(f"RedWitness quick-scan authorization statement\nstated by: {user}\ntarget: {tf['request_url']}\n".encode()).hexdigest()
         host = tf["request_url"].split("/")[2]
         scope_in = ScopeIn(name=f"Quick scan: {host}"[:100], client=host, authorized_by=user, authorization_doc_sha256=doc, valid_days=QUICK_VALID_DAYS, valid_from=body.valid_from,
                            endpoints=[EndpointIn(url=tf["request_url"], provider=tf["provider"], model=tf["model"], local=local, api_key_env=tf["api_key_env"],

@@ -221,7 +221,7 @@ class McpClient:
 
     async def initialize(self, with_cred: bool = True) -> tuple[int | None, dict | None]:
         self.session = None
-        st, d = await self.call("initialize", {"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "AIVeritX MCP audit", "version": "1.0"}},
+        st, d = await self.call("initialize", {"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "RedWitness MCP audit", "version": "1.0"}},
                                 with_cred=with_cred)
         if st and st < 300 and d and "result" in d:
             await self.call("notifications/initialized", notify=True, with_cred=with_cred)

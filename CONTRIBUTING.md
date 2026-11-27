@@ -1,6 +1,6 @@
-# Contributing to AIVeritX
+# Contributing to RedWitness
 
-Thank you for helping. AIVeritX is a security tool, so a good contribution is one that makes results **more trustworthy**, not only more numerous. This guide shows how to get set up and what a pull request needs.
+Thank you for helping. RedWitness is a security tool, so a good contribution is one that makes results **more trustworthy**, not only more numerous. This guide shows how to get set up and what a pull request needs.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately, see [SECURITY.md](SECURITY.md).
 
@@ -27,7 +27,7 @@ These are the reasons the results can be trusted. A change that weakens one is u
 You need Docker with Compose v2 for the full stack, Python 3.12+, Node 20.9+ and PostgreSQL 14+ for local work.
 
 ```bash
-git clone https://github.com/capture0x/AIVeritX.git && cd AIVeritX
+git clone https://github.com/capture0x/redwitness.git && cd redwitness
 ./install.sh --yes          # full stack at http://localhost:3000
 ```
 
@@ -36,9 +36,9 @@ git clone https://github.com/capture0x/AIVeritX.git && cd AIVeritX
 ```bash
 # Backend
 cd backend && python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
-export AIVERITX_DATABASE_URL=postgresql://user:password@127.0.0.1:5432/aiveritx
-export AIVERITX_SCOPE_KEYS=k1:$(python -c "import secrets;print(secrets.token_hex(32))")
-export AIVERITX_ADMIN_PASSWORD='at-least-12-characters'
+export REDWITNESS_DATABASE_URL=postgresql://user:password@127.0.0.1:5432/redwitness
+export REDWITNESS_SCOPE_KEYS=k1:$(python -c "import secrets;print(secrets.token_hex(32))")
+export REDWITNESS_ADMIN_PASSWORD='at-least-12-characters'
 uvicorn main:create_app --factory --host 127.0.0.1 --port 8000
 
 # UI (another terminal)

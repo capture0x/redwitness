@@ -43,7 +43,7 @@ export default function McpPage() {
   return (
     <>
       <PageHeader title="MCP Servers" sub="Read-only audit of Model Context Protocol servers: hidden instructions in tool descriptions, risky tools, leaked secrets, missing authentication and definitions that change between scans." />
-      <Notice tone="blue"><ShieldCheck className="mr-1 inline h-4 w-4" />AIVeritX only <b>lists</b> what the server offers (initialize, tools/list, prompts/list, resources/list). It never calls a tool, reads a resource or runs a command, and every request goes through the signed scope. Only HTTP servers are supported, not stdio.</Notice>
+      <Notice tone="blue"><ShieldCheck className="mr-1 inline h-4 w-4" />RedWitness only <b>lists</b> what the server offers (initialize, tools/list, prompts/list, resources/list). It never calls a tool, reads a resource or runs a command, and every request goes through the signed scope. Only HTTP servers are supported, not stdio.</Notice>
       {err && <Notice tone="red">{err}</Notice>}
       {can("operator") && (usable.length === 0 ? (
         <div data-testid="mcp-no-scope"><Notice tone="amber"><b>No signed scope covers an MCP server yet.</b> In <Link href="/scopes" className="underline">Scopes</Link>, add the server's address with the provider <span className="font-mono">mcp</span>, tick <b>MCP server audit (read-only)</b> and sign.</Notice></div>

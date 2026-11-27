@@ -25,7 +25,7 @@ async function login(user, pw) {
 }
 async function logout() { await page.click("button[aria-label='Sign out']"); await page.waitForURL("**/login"); }
 async function api(method, path, body) {
-  const r = await page.request.fetch(`${BASE}/api${path}`, { method, headers: { "content-type": "application/json", "x-aiveritx-csrf": "1" }, data: body ? JSON.stringify(body) : undefined });
+  const r = await page.request.fetch(`${BASE}/api${path}`, { method, headers: { "content-type": "application/json", "x-redwitness-csrf": "1" }, data: body ? JSON.stringify(body) : undefined });
   let json = null; try { json = await r.json(); } catch { /* plain */ }
   return { status: r.status(), json, r };
 }
@@ -179,8 +179,8 @@ async function runMock() {
   check("client report: the dialog downloads a valid PDF", crBuf.subarray(0, 5).toString() === "%PDF-" && dl.suggestedFilename().startsWith("pentest-report-"), dl.suggestedFilename());
   let crText = ""; try { crText = execFileSync("pdftotext", [`${OUT}/client-report.pdf`, "-"], { encoding: "utf8" }); } catch { /* poppler missing */ }
   if (crText) check("client report: cover, finding ids, steps to reproduce and remediation are present",
-    ["AI Penetration Test Report", "E2E Client Ltd", "E2E Tester", "AIX-001", "Steps to reproduce", "Remediation", "Scope and authorization"].every((w) => crText.includes(w)));
-  const docx = await page.request.post(`${BASE}/api/client-report`, { headers: { "content-type": "application/json", "x-aiveritx-csrf": "1" }, data: JSON.stringify({ run_ids: [run1], format: "docx" }) });
+    ["AI Penetration Test Report", "E2E Client Ltd", "E2E Tester", "RW-001", "Steps to reproduce", "Remediation", "Scope and authorization"].every((w) => crText.includes(w)));
+  const docx = await page.request.post(`${BASE}/api/client-report`, { headers: { "content-type": "application/json", "x-redwitness-csrf": "1" }, data: JSON.stringify({ run_ids: [run1], format: "docx" }) });
   const docxBuf = await docx.body();
   check("client report: the DOCX export is a Word document", docx.status() === 200 && docxBuf.subarray(0, 2).toString() === "PK" && docxBuf.length > 5000, `${docx.status()} ${docxBuf.length}`);
   await logout();

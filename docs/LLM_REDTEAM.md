@@ -1,4 +1,4 @@
-# AIVeritX - LLM Red Teaming / Vulnerability Scanner Architecture
+# RedWitness - LLM Red Teaming / Vulnerability Scanner Architecture
 
 **Status: implemented (Phase 0-1 + additions).** The backend (`backend/llm_redteam/`, hermetic tests, PostgreSQL), the Next.js UI
 (`frontend/`) and the run instructions are in `README.md`. The decisions in Section 10 were implemented as proposed
@@ -6,7 +6,7 @@
 library = a file + a SHA-256 record). The approval screen pins the digest of the content to be signed, its lineage and its start
 date: the server takes these back from the screen and does not regenerate them itself.
 
-AIVeritX is an assessment tool that measures the security weaknesses of enterprise LLM applications (prompt injection, system-prompt
+RedWitness is an assessment tool that measures the security weaknesses of enterprise LLM applications (prompt injection, system-prompt
 leakage, guardrail bypass, tool abuse, data leakage) in an **authorized** way (like Burp/Nessus, but for LLMs). Web/network scanning was removed from the project;
 the earlier work is kept under `_archive/web-pentest-2026-11/`.
 

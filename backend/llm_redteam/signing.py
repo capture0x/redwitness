@@ -37,15 +37,15 @@ class Keyring:
 
     @classmethod
     def from_env(cls, env=os.environ) -> "Keyring":
-        """AIVERITX_SCOPE_KEYS='k1:<hex>,k2:<hex>'  AIVERITX_SCOPE_ACTIVE_KEY='k2'"""
+        """REDWITNESS_SCOPE_KEYS='k1:<hex>,k2:<hex>'  REDWITNESS_SCOPE_ACTIVE_KEY='k2'"""
         keys = {}
-        for part in filter(None, (p.strip() for p in env.get("AIVERITX_SCOPE_KEYS", "").split(","))):
+        for part in filter(None, (p.strip() for p in env.get("REDWITNESS_SCOPE_KEYS", "").split(","))):
             kid, _, hexkey = part.partition(":")
             try:
                 keys[kid] = bytes.fromhex(hexkey)
             except ValueError:
                 raise SigningError(f"signing key '{kid}' is not valid hex") from None
-        active = env.get("AIVERITX_SCOPE_ACTIVE_KEY") or (next(iter(keys)) if len(keys) == 1 else None)
+        active = env.get("REDWITNESS_SCOPE_ACTIVE_KEY") or (next(iter(keys)) if len(keys) == 1 else None)
         return cls(keys, active)
 
     @property

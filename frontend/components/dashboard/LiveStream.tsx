@@ -52,7 +52,7 @@ export default function LiveStream({ feed, loading }: { feed?: LiveFeed | null; 
           {feed?.live ? "LIVE" : "IDLE"}</span></CardHeader>
       <CardContent className="flex-1 pt-6">
         <div className="terminal relative min-h-[360px] overflow-hidden rounded-2xl p-6 font-mono">
-          <div aria-hidden className="mb-4 flex items-center gap-1.5 font-mono text-[11px] text-slate-600"><i className="h-2 w-2 rounded-full bg-rose-400/60" /><i className="h-2 w-2 rounded-full bg-amber-400/60" /><i className="h-2 w-2 rounded-full bg-emerald-400/60" /><span className="ml-2">agent@aiveritx ~ tail -f engine.log</span></div>
+          <div aria-hidden className="mb-4 flex items-center gap-1.5 font-mono text-[11px] text-slate-600"><i className="h-2 w-2 rounded-full bg-rose-400/60" /><i className="h-2 w-2 rounded-full bg-amber-400/60" /><i className="h-2 w-2 rounded-full bg-emerald-400/60" /><span className="ml-2">agent@redwitness ~ tail -f engine.log</span></div>
           {loading ? <div className="space-y-5">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="flex items-center gap-4"><Skeleton className="h-8 w-8 rounded-full" /><Skeleton className="h-4 flex-1" /></div>)}</div>
             : events.length === 0 ? <div className="grid h-[320px] place-items-center text-center text-slate-600">No agent activity yet.<br />Start a test to see it here.</div>
             : (

@@ -1,6 +1,6 @@
 {
  "mode": "mock",
- "total": 138,
+ "total": 148,
  "failed": 0,
  "results": [
   {
@@ -46,7 +46,7 @@
   {
    "name": "the viewer menu has no New Test / Audit / Users / Settings",
    "ok": true,
-   "detail": "Dashboard|Targets|Findings|Test Library|Benchmarks|Defense Efficacy|AI Security Suite|Privacy & Extraction|Model Supply Chain|Logs|OWASP Compliance|Compliance Suite|Scopes"
+   "detail": "Dashboard|Targets|Findings|Test Library|Benchmarks|Defense Efficacy|AI Security Suite|Privacy & Extraction|Model Supply Chain|MCP Servers|Logs|OWASP Compliance|Compliance Suite|Scopes"
   },
   {
    "name": "the viewer sees 'no access' on the /new page",
@@ -196,7 +196,7 @@
   {
    "name": "PDF report was generated (valid PDF, > 8 KB)",
    "ok": true,
-   "detail": "45747 bytes"
+   "detail": "45738 bytes"
   },
   {
    "name": "PDF content: risk score, finding ids and library name are present",
@@ -207,6 +207,21 @@
    "name": "CSV report: header + 7 finding rows",
    "ok": true,
    "detail": "8"
+  },
+  {
+   "name": "client report: the dialog downloads a valid PDF",
+   "ok": true,
+   "detail": "pentest-report-34068350.pdf"
+  },
+  {
+   "name": "client report: cover, finding ids, steps to reproduce and remediation are present",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "client report: the DOCX export is a Word document",
+   "ok": true,
+   "detail": "200 41604"
   },
   {
    "name": "scope limit: hard stop after 2 requests (REQUEST_LIMIT), the refusal was coded",
@@ -434,6 +449,36 @@
    "detail": ""
   },
   {
+   "name": "cURL import fills the URL, the template ({{prompt}} and {{session_id}}) and clears the pasted command",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Preview request shows the body locally",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the custom HTTP plan names the target and skips the fake-tool case with the reason",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "preview and review sent nothing to the target",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the sidebar has the MCP Servers page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the MCP page explains how to authorize a server when no scope covers one",
+   "ok": true,
+   "detail": ""
+  },
+  {
    "name": "framework scope was signed",
    "ok": true,
    "detail": ""
@@ -461,7 +506,7 @@
   {
    "name": "a run limited to AISVS-mapped benchmark cases started",
    "ok": true,
-   "detail": "{\"id\":\"a7b02984-f023-4887-a3a3-e55a46ec2126\",\"cases\":2,\"owasp_planned\":[\"LLM01_PromptInjection\"],\"owasp_skipped\":[]}"
+   "detail": "{\"id\":\"3fede380-534e-4603-b8b3-c6dfe62d6308\",\"cases\":2,\"owasp_planned\":[\"LLM01_PromptInjection\"],\"owasp_skipped\":[]}"
   },
   {
    "name": "the run evaluated both benchmark cases",
@@ -500,6 +545,11 @@
   },
   {
    "name": "OWASP page: the Agentic tab shows ten ASI cards",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a finding opens with the ATLAS badge and framework mapping",
    "ok": true,
    "detail": ""
   },
@@ -616,7 +666,7 @@
   {
    "name": "import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning",
    "ok": true,
-   "detail": "{\"id\":\"913ec8a2-dc69-4a50-8d28-5253ae8aa21f\",\"name\":\"memory-poisoning_notes.txt\",\"version\":\"import-1\",\"sha256\":\"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47\",\"cases\":2,\"report\":{\"r"
+   "detail": "{\"id\":\"9ccdfe71-be05-4c46-8db0-ad6885a5e676\",\"name\":\"memory-poisoning_notes.txt\",\"version\":\"import-1\",\"sha256\":\"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47\",\"cases\":2,\"report\":{\"r"
   },
   {
    "name": "the imported library ran",
@@ -641,7 +691,7 @@
   {
    "name": "a branching library validates and is saved",
    "ok": true,
-   "detail": "{\"id\":\"5f1ce0d6-2f96-41cd-918c-3cfceff5883b\",\"name\":\"Payload branching\",\"version\":\"1\",\"sha256\":\"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b"
+   "detail": "{\"id\":\"b599da85-d9fa-4a76-9339-a3e5dfa3672f\",\"name\":\"Payload branching\",\"version\":\"1\",\"sha256\":\"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b"
   },
   {
    "name": "branching: a scope without 'branching_allowed' refuses the run (422)",
@@ -651,7 +701,7 @@
   {
    "name": "branching: the run was accepted under the granted scope",
    "ok": true,
-   "detail": "{\"id\":\"e0760803-c18d-4117-8dfc-486ee3daecf7\",\"cases\":1,\"owasp_planned\":[\"LLM07_SystemPromptLeakage\"],\"owasp_skipped\":[]}"
+   "detail": "{\"id\":\"1ece49c8-d425-4546-ab2b-ad0185375334\",\"cases\":1,\"owasp_planned\":[\"LLM07_SystemPromptLeakage\"],\"owasp_skipped\":[]}"
   },
   {
    "name": "branching: the code followed the rule (s1 → s3, s2 never sent) and the path is in the evidence",

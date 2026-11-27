@@ -1,4 +1,4 @@
-# AIVeritX UI (Next.js 16, standalone output). Multi-stage: build tools do not enter the runtime image.
+# RedWitness UI (Next.js 16, standalone output). Multi-stage: build tools do not enter the runtime image.
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -7,8 +7,8 @@ RUN npm ci --no-audit --no-fund
 FROM node:22-alpine AS build
 WORKDIR /app
 # /api/* requests are proxied to this address, fixed at build time (next.config.mjs rewrites).
-ARG AIVERITX_API=http://backend:8000
-ENV AIVERITX_API=$AIVERITX_API NEXT_TELEMETRY_DISABLED=1
+ARG REDWITNESS_API=http://backend:8000
+ENV REDWITNESS_API=$REDWITNESS_API NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

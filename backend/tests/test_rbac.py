@@ -13,7 +13,7 @@ from main import create_app
 from test_api import RING, _plain_http, confirm, lib_json, scope_body, wait
 
 PW = "admin-password-123"
-H = {"x-aiveritx-csrf": "1"}
+H = {"x-redwitness-csrf": "1"}
 
 
 @pytest.fixture

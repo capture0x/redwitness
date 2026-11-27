@@ -1,11 +1,11 @@
-# AIVeritX - Architecture
+# RedWitness - Architecture
 
 This document explains how the platform works and **why it is designed this way**. For installation and usage see [`README.md`](../README.md);
 for the decision history and measurements see [`LLM_REDTEAM.md`](LLM_REDTEAM.md). Every behavior described here has a counterpart in the code and in the tests.
 
 ## 1. Purpose and core principle
 
-AIVeritX tests an **LLM application** (an OpenAI-compatible / Anthropic / local-model endpoint) inside a signed authorization boundary, using an external test library;
+RedWitness tests an **LLM application** (an OpenAI-compatible / Anthropic / local-model endpoint) inside a signed authorization boundary, using an external test library;
 it evaluates the responses with a **judge LLM**, counts only **reproducible** findings as "verified", and reports the results mapped to the OWASP Top 10 for LLM Applications
 (2025) categories.
 
@@ -530,12 +530,12 @@ Pages: Dashboard · New Test (step by step) · Test Library (+ ready-made templa
 - **Data fetching:** every poll goes through one shared query client (`usePoll`): identical polls from several components are de-duplicated, and the previous data stays on screen during a refetch or a filter change, so the UI never blanks or freezes. Skeleton loaders cover the first load.
 - **Dashboard:** KPI cards with sparklines; a risk-score trend and a pass-rate trend (line/area charts); **System health** (API latency measured as a real browser round trip, active agents = running runs, token burn rate derived from the cumulative token counter); the **Agent live stream** (the engine's recorded steps from `/api/live`, polling every 1.5 s while a run is active); **Recent activity** (the latest runs); the OWASP compliance meter; token usage and severity charts.
 - **Design system:** deep blue-tinted charcoal surfaces with hairline borders, an indigo accent, a capsule-style active navigation pill, status colors and icons on the OWASP cards with hover micro-animations.
-- **Dark / light theme:** a Light · Dark · System switch at the bottom of the sidebar (`components/ThemeToggle.tsx`, `lib/theme.ts`); Light is the default and the choice is stored in this browser (`localStorage` key `aiveritx.theme`). Every Tailwind colour scale points at a CSS variable (`app/theme-colors.css`): `html.light` mirrors the neutral (slate) scale, darkens the light tones of colour families (50-400) so text stays readable, keeps 500-700 (buttons and solid badges) and lightens 800-950. `text-snow` is a fixed white for text on solid colour. Glass, shadow and terminal surfaces use variables in `globals.css`; Recharts and React Flow colours are picked in JS with `useTheme()`. An inline script in `<head>` applies the theme before the first paint, so the page never flashes the wrong theme. With JavaScript off the server-rendered `light` class applies.
+- **Dark / light theme:** a Light · Dark · System switch at the bottom of the sidebar (`components/ThemeToggle.tsx`, `lib/theme.ts`); Light is the default and the choice is stored in this browser (`localStorage` key `redwitness.theme`). Every Tailwind colour scale points at a CSS variable (`app/theme-colors.css`): `html.light` mirrors the neutral (slate) scale, darkens the light tones of colour families (50-400) so text stays readable, keeps 500-700 (buttons and solid badges) and lightens 800-950. `text-snow` is a fixed white for text on solid colour. Glass, shadow and terminal surfaces use variables in `globals.css`; Recharts and React Flow colours are picked in JS with `useTheme()`. An inline script in `<head>` applies the theme before the first paint, so the page never flashes the wrong theme. With JavaScript off the server-rendered `light` class applies.
 
 ## 14. Deployment
 
 `docker-compose.yml`: `db` (PostgreSQL 16, a persistent volume, a healthcheck) → `backend` (`expose` inside the compose network only) → `frontend` (published to `127.0.0.1` only).
-The images run as a non-root user; test/dev files do not enter the backend image. The UI fixes the backend address **at build time** (the `AIVERITX_API` build arg). Details: README → "Quick start (Docker)".
+The images run as a non-root user; test/dev files do not enter the backend image. The UI fixes the backend address **at build time** (the `REDWITNESS_API` build arg). Details: README → "Quick start (Docker)".
 
 ## 15. Test strategy
 

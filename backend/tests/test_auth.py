@@ -8,7 +8,7 @@ from llm_redteam.signing import Keyring
 from main import create_app
 
 PW = "correct-password-123"
-H = {"x-aiveritx-csrf": "1"}
+H = {"x-redwitness-csrf": "1"}
 LOGIN = {"username": "admin", "password": PW}
 
 
@@ -26,7 +26,7 @@ def make(fresh_db, auth):
 def test_unconfigured_auth_fails_closed(fresh_db):
     with TestClient(make(fresh_db, Auth(None))) as c:
         r = c.get("/api/system")
-        assert r.status_code == 503 and "AIVERITX_ADMIN_PASSWORD" in r.json()["detail"]["message"]
+        assert r.status_code == 503 and "REDWITNESS_ADMIN_PASSWORD" in r.json()["detail"]["message"]
         assert c.post("/api/auth/login", json=LOGIN).status_code == 503
         st = c.get("/api/auth/status").json()
         assert st["configured"] is False and st["authenticated"] is False and st["problem"]

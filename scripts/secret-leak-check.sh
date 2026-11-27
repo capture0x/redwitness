@@ -10,8 +10,8 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 : "${FAKE_KEY:?set FAKE_KEY to the fake key you typed in the target form}"
 COOKIE="${SESSION_COOKIE:-}"
-ADMIN_PW="$(grep -E '^AIVERITX_ADMIN_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)"
-SIGNKEY="$(grep -E '^AIVERITX_SCOPE_KEYS=' .env 2>/dev/null | cut -d= -f2- | sed 's/^[^:]*://')"
+ADMIN_PW="$(grep -E '^REDWITNESS_ADMIN_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)"
+SIGNKEY="$(grep -E '^REDWITNESS_SCOPE_KEYS=' .env 2>/dev/null | cut -d= -f2- | sed 's/^[^:]*://')"
 PGPW="$(grep -E '^POSTGRES_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)"
 
 # name=secret pairs to search for (empty values are skipped)
@@ -38,7 +38,7 @@ for s in db backend frontend; do
 done
 
 echo "== 2. Database content (full SQL dump)"
-if docker compose exec -T db pg_dump -U aiveritx aiveritx > "$T/db.sql" 2>"$T/db.err"; then
+if docker compose exec -T db pg_dump -U redwitness redwitness > "$T/db.sql" 2>"$T/db.err"; then
   scan "database dump (all tables, incl. audit log)" "$T/db.sql"
   # the dump should also contain NO bearer/cookie-looking header text
   if grep -aiE "authorization: *bearer [A-Za-z0-9._-]{12,}|rl_session=[A-Za-z0-9._-]{12,}" "$T/db.sql" >/dev/null; then

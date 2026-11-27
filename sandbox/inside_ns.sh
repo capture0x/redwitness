@@ -25,14 +25,14 @@ for host in ("1.1.1.1", "8.8.8.8", "93.184.216.34"):
 PY
 } | tee "$OUT/isolation.txt"
 
-export AIVERITX_DATABASE_URL="postgresql://postgres@/aiveritx?host=$SOCK"
-export AIVERITX_SCOPE_KEYS="k1:$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
-export AIVERITX_ADMIN_PASSWORD="e2e-admin-password-1"
-export NEXT_TELEMETRY_DISABLED=1 ANTHROPIC_API_KEY="" AIVERITX_ALLOWED_HOSTS="localhost"
+export REDWITNESS_DATABASE_URL="postgresql://postgres@/redwitness?host=$SOCK"
+export REDWITNESS_SCOPE_KEYS="k1:$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
+export REDWITNESS_ADMIN_PASSWORD="e2e-admin-password-1"
+export NEXT_TELEMETRY_DISABLED=1 ANTHROPIC_API_KEY="" REDWITNESS_ALLOWED_HOSTS="localhost"
 
 start python3 "$ROOT/sandbox/mock_llm.py" --port 9100
 start python3 "$ROOT/sandbox/mock_mcp.py" --port 9400
-mkdir -p "$WORK/jobs/in" "$WORK/jobs/out"; export AIVERITX_SANDBOX_DIR="$WORK/jobs"
+mkdir -p "$WORK/jobs/in" "$WORK/jobs/out"; export REDWITNESS_SANDBOX_DIR="$WORK/jobs"
 start env RUNNER_JOBS="$WORK/jobs" python3 "$ROOT/runner/runner.py"
 if [ "$MODE" = ollama ]; then
   start python3 "$ROOT/sandbox/relay.py" inside --sock "$SOCK/ollama.sock" --port 11434
@@ -47,10 +47,10 @@ waitport 9100 && waitport 9400 && waitport 8000 && waitport 3000 || { echo "INFR
 
 cd "$ROOT/frontend"
 if [ "$MODE" = ollama ]; then LIBF="$ROOT/sandbox/e2e_library_real.json"; else LIBF="$ROOT/sandbox/e2e_library.json"; fi
-OUT="$OUT" MODE="$MODE" LIB="$LIBF" ADMIN_PW="$AIVERITX_ADMIN_PASSWORD" node e2e/e2e.mjs 2>&1 | tee "$OUT/e2e-$MODE.log"
+OUT="$OUT" MODE="$MODE" LIB="$LIBF" ADMIN_PW="$REDWITNESS_ADMIN_PASSWORD" node e2e/e2e.mjs 2>&1 | tee "$OUT/e2e-$MODE.log"
 RC=${PIPESTATUS[0]}
 if [ "$MODE" = mock ]; then
-  ADMIN_PW="$AIVERITX_ADMIN_PASSWORD" python3 "$ROOT/sandbox/e2e_modules.py" 2>&1 | tee "$OUT/e2e-modules.log"
+  ADMIN_PW="$REDWITNESS_ADMIN_PASSWORD" python3 "$ROOT/sandbox/e2e_modules.py" 2>&1 | tee "$OUT/e2e-modules.log"
   [ "${PIPESTATUS[0]}" -eq 0 ] || RC=1
 fi
 exit "$RC"

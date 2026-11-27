@@ -156,7 +156,7 @@ class Store:
 
     def __init__(self, dsn: str):
         if not dsn or not str(dsn).startswith(("postgresql://", "postgres://")):
-            raise ValueError("a PostgreSQL DSN is required (AIVERITX_DATABASE_URL=postgresql://...)")
+            raise ValueError("a PostgreSQL DSN is required (REDWITNESS_DATABASE_URL=postgresql://...)")
         self.dsn = str(dsn)
         with self.conn() as c, c.transaction():
             c.execute(SCHEMA)

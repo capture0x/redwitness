@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 /** Colour theme. The choice lives in this browser (localStorage); "system" follows the operating system. Light is the default. */
 export type ThemeChoice = "dark" | "light" | "system";
 export type Theme = "dark" | "light";
-export const THEME_KEY = "aiveritx.theme";
+export const THEME_KEY = "redwitness.theme";
 const listeners = new Set<() => void>();
 const media = () => (typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: light)") : null);
 

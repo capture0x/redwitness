@@ -14,8 +14,8 @@ Principles
 - Session: HMAC-signed, expiring, HttpOnly + SameSite=Strict cookie. Brute force: 5 failures per (client, user) -> 5 minute lock.
 - CSRF: a custom header is required on state-changing requests. Host validation is in main.py.
 - Fail-closed: if there are no users and no initial password is set, the API returns 503.
-AIVERITX_ADMIN_PASSWORD only creates the 'admin' user on FIRST start (when the users table is empty).
-AIVERITX_INSECURE_NO_AUTH=1 is for local development only (everyone counts as admin; a warning is shown on the status screen).
+REDWITNESS_ADMIN_PASSWORD only creates the 'admin' user on FIRST start (when the users table is empty).
+REDWITNESS_INSECURE_NO_AUTH=1 is for local development only (everyone counts as admin; a warning is shown on the status screen).
 """
 import base64
 import hashlib
@@ -28,7 +28,7 @@ import time
 from dataclasses import dataclass
 
 COOKIE = "rl_session"
-CSRF_HEADER = "x-aiveritx-csrf"
+CSRF_HEADER = "x-redwitness-csrf"
 MIN_PASSWORD = 12
 MAX_FAILURES, LOCK_SECONDS = 5, 300
 ROLES = ("viewer", "operator", "admin")
@@ -143,9 +143,9 @@ class Auth:
 
     @classmethod
     def from_env(cls, env=os.environ) -> "Auth":
-        secret = env.get("AIVERITX_SESSION_SECRET")
-        return cls(env.get("AIVERITX_ADMIN_PASSWORD"), secret.encode() if secret else None,
-                   insecure=env.get("AIVERITX_INSECURE_NO_AUTH") == "1")
+        secret = env.get("REDWITNESS_SESSION_SECRET")
+        return cls(env.get("REDWITNESS_ADMIN_PASSWORD"), secret.encode() if secret else None,
+                   insecure=env.get("REDWITNESS_INSECURE_NO_AUTH") == "1")
 
     def bind(self, users) -> None:
         self.users = users
@@ -187,7 +187,7 @@ class Auth:
     # -------- login
     def login(self, username: str, password: str, client: str) -> tuple[str, dict]:
         if not self.configured:
-            raise AuthError(503, "Authentication is not configured: set AIVERITX_ADMIN_PASSWORD (at least 12 characters); "
+            raise AuthError(503, "Authentication is not configured: set REDWITNESS_ADMIN_PASSWORD (at least 12 characters); "
                                  "the server is never run without a password.")
         key, now = f"{client}|{username}", self._clock()
         recent = [t for t in self._fails.get(key, []) if now - t < LOCK_SECONDS]
@@ -206,14 +206,14 @@ class Auth:
         return {"configured": self.configured or self.insecure, "insecure": self.insecure, "authenticated": p is not None,
                 "user": {"username": p.username, "role": p.role} if p else None,
                 "problem": ("The password must be at least 12 characters." if self.short_password and not self.configured else
-                            None if self.configured or self.insecure else "AIVERITX_ADMIN_PASSWORD is not set.")}
+                            None if self.configured or self.insecure else "REDWITNESS_ADMIN_PASSWORD is not set.")}
 
     # -------- request check
     def check_request(self, method: str, path: str, token: str | None, csrf: str | None) -> Principal:
         if self.insecure:
             return Principal("dev-insecure", "admin")
         if not self.configured:
-            raise AuthError(503, "Authentication is not configured: set AIVERITX_ADMIN_PASSWORD (at least 12 characters); "
+            raise AuthError(503, "Authentication is not configured: set REDWITNESS_ADMIN_PASSWORD (at least 12 characters); "
                                  "the server is never run without a password.")
         p = self.principal(token)
         if p is None:

@@ -16,18 +16,18 @@ ADMIN_PW="$(rand_pw)"
 umask 077
 cat > .env <<EOF
 POSTGRES_PASSWORD=$(rand_hex 16)
-AIVERITX_SCOPE_KEYS=k1:$(rand_hex 32)
-AIVERITX_ADMIN_PASSWORD=${ADMIN_PW}
-AIVERITX_SESSION_SECRET=$(rand_hex 32)
-AIVERITX_COOKIE_SECURE=0
-AIVERITX_PORT=3000
+REDWITNESS_SCOPE_KEYS=k1:$(rand_hex 32)
+REDWITNESS_ADMIN_PASSWORD=${ADMIN_PW}
+REDWITNESS_SESSION_SECRET=$(rand_hex 32)
+REDWITNESS_COOKIE_SECURE=0
+REDWITNESS_PORT=3000
 # Put your judge LLM key here (or give another variable name in Settings):
 ANTHROPIC_API_KEY=
 EOF
 
 echo ".env created (mode 600)."
-[ -n "${AIVERITX_INSTALLER:-}" ] && exit 0
+[ -n "${REDWITNESS_INSTALLER:-}" ] && exit 0
 echo "  Username      : admin"
-echo "  Password      : ${ADMIN_PW}   (AIVERITX_ADMIN_PASSWORD in .env; change it on the Users page after the first sign-in)"
-echo "  Signing key   : AIVERITX_SCOPE_KEYS in .env - BACK IT UP"
+echo "  Password      : ${ADMIN_PW}   (REDWITNESS_ADMIN_PASSWORD in .env; change it on the Users page after the first sign-in)"
+echo "  Signing key   : REDWITNESS_SCOPE_KEYS in .env - BACK IT UP"
 echo "Next step      : docker compose up -d --build   ->  http://localhost:3000"

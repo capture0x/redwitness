@@ -31,7 +31,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       # The tests create and drop a temporary database on this server for each test (tests/conftest.py).
-      AIVERITX_TEST_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+      REDWITNESS_TEST_DSN: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

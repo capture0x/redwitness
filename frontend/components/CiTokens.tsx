@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Hint, Input, Label, NativeSelect } from "@/components/ui/input";
 
 const snippet = (token: string, origin: string) => `# GitHub Actions step (store the token as a secret, never in the repo)
-- name: AIVeritX scan
-  env: { AIVERITX_TOKEN: \${{ secrets.AIVERITX_TOKEN }} }
+- name: RedWitness scan
+  env: { REDWITNESS_TOKEN: \${{ secrets.REDWITNESS_TOKEN }} }
   run: |
     JOB=$(curl -sf -X POST ${origin}/api/scan-ci \\
-      -H "Authorization: Bearer $AIVERITX_TOKEN" -H "Content-Type: application/json" \\
+      -H "Authorization: Bearer $REDWITNESS_TOKEN" -H "Content-Type: application/json" \\
       -d '{"scope_id":"<scope id>","endpoint_url":"<target url>","library_id":"<library id>","label":"'"$GITHUB_SHA"'","fail_on":"high"}' | jq -r .job_id)
-    until R=$(curl -sf -H "Authorization: Bearer $AIVERITX_TOKEN" ${origin}/api/scan-ci/$JOB) && [ "$(echo "$R" | jq -r .status)" != running ]; do sleep 10; done
+    until R=$(curl -sf -H "Authorization: Bearer $REDWITNESS_TOKEN" ${origin}/api/scan-ci/$JOB) && [ "$(echo "$R" | jq -r .status)" != running ]; do sleep 10; done
     echo "$R" | jq .gate; test "$(echo "$R" | jq -r .gate.passed)" = true`;
 
 const TONE: Record<string, any> = { active: "green", revoked: "red", expired: "amber" };

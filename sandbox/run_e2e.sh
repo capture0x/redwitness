@@ -15,7 +15,7 @@ trap cleanup EXIT
 "$PGBIN/initdb" -D "$WORK/pgdata" -U postgres -A trust -E UTF8 --no-sync >/dev/null
 # NO TCP: unix socket only (sockets cross network namespaces)
 "$PGBIN/pg_ctl" -D "$WORK/pgdata" -o "-c listen_addresses='' -c unix_socket_directories=$SOCK -c fsync=off" -w -l "$WORK/pg.log" start >/dev/null
-"$PGBIN/psql" -h "$SOCK" -U postgres -qc "CREATE DATABASE aiveritx"
+"$PGBIN/psql" -h "$SOCK" -U postgres -qc "CREATE DATABASE redwitness"
 if [ "$MODE" = ollama ]; then
   python3 "$ROOT/sandbox/relay.py" outside --sock "$SOCK/ollama.sock" --target 127.0.0.1:11434 >"$WORK/relay-outside.log" 2>&1 & PIDS+=($!)
   sleep 1

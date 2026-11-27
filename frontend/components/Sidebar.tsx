@@ -11,6 +11,7 @@ import { Input, Label } from "./ui/input";
 import { Tip } from "./ui/misc";
 import { api, usePoll } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import BrandMark from "./BrandMark";
 import { Button } from "./ui/button";
 
 const WORKSPACE = [
@@ -65,8 +66,8 @@ export default function Sidebar() {
     <aside className="relative flex w-[232px] shrink-0 flex-col border-r border-white/[0.06] bg-sidebar/55 backdrop-blur-xl">
       <div className="px-5 pb-5 pt-6">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-[10px] bg-gradient-to-br from-indigo-300 via-indigo-500 to-violet-600 shadow-glow"><span className="text-[15px] font-bold leading-none text-snow">A</span></div>
-          <div className="text-[15px] font-semibold tracking-tight text-white">AIVeritX</div>
+          <BrandMark size={32} className="shadow-glow rounded-[10px]" />
+          <div className="text-[15px] font-semibold tracking-tight text-white">RedWitness</div>
         </div>
       </div>
       <nav className="flex-1 space-y-8 overflow-y-auto px-3 pt-2">

@@ -66,14 +66,14 @@ def _pg_bin():
 
 @pytest.fixture(scope="session")
 def pg_server(tmp_path_factory):
-    """Admin DSN. If AIVERITX_TEST_DSN is given that server is used; otherwise a temporary, user-owned cluster is started."""
-    dsn = os.environ.get("AIVERITX_TEST_DSN")
+    """Admin DSN. If REDWITNESS_TEST_DSN is given that server is used; otherwise a temporary, user-owned cluster is started."""
+    dsn = os.environ.get("REDWITNESS_TEST_DSN")
     if dsn:
         yield dsn
         return
     bindir = _pg_bin()
     if not bindir:
-        pytest.skip("PostgreSQL not found; provide AIVERITX_TEST_DSN")
+        pytest.skip("PostgreSQL not found; provide REDWITNESS_TEST_DSN")
     data = tmp_path_factory.mktemp("pg") / "data"
     with S.socket() as s:
         s.bind(("127.0.0.1", 0))

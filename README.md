@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
-  <img src="docs/logo.png" alt="AIVeritX" width="240">
+  <img src="docs/logo.png" alt="RedWitness" width="240">
 </picture>
 
 <p><strong>AI penetration testing platform for LLM applications</strong></p>
@@ -14,7 +14,7 @@ Every test runs inside a signed authorization scope, and every finding is proven
 
 <p>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License: AGPL-3.0"></a>
-<a href="https://github.com/capture0x/AIVeritX/actions/workflows/ci.yml"><img src="https://github.com/capture0x/AIVeritX/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://github.com/capture0x/redwitness/actions/workflows/ci.yml"><img src="https://github.com/capture0x/redwitness/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 <img src="https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
 <img src="https://img.shields.io/badge/Next.js-16-111111?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16">
 <img src="https://img.shields.io/badge/Docker%20Compose-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose ready">
@@ -38,16 +38,16 @@ Every test runs inside a signed authorization scope, and every finding is proven
 </div>
 
 > [!WARNING]
-> **For legal and authorized use only.** AIVeritX is a security testing tool. Use it only against systems you own or have explicit written permission to test. Unauthorized testing may be illegal. The authors and contributors accept no liability for misuse or for any damage it causes. See [Legal disclaimer](#legal-disclaimer).
+> **For legal and authorized use only.** RedWitness is a security testing tool. Use it only against systems you own or have explicit written permission to test. Unauthorized testing may be illegal. The authors and contributors accept no liability for misuse or for any damage it causes. See [Legal disclaimer](#legal-disclaimer).
 
 <p align="center">
-<img src="docs/demo.gif" alt="AIVeritX: a Quick scan is reviewed, signed and run live; verified findings and the OWASP matrix follow" width="100%">
+<img src="docs/demo.gif" alt="RedWitness: a Quick scan is reviewed, signed and run live; verified findings and the OWASP matrix follow" width="100%">
 </p>
 <p align="center"><sub>A Quick scan from target to verified findings, recorded against the bundled mock target.</sub></p>
 
 ## What it tests
 
-AIVeritX attacks the application around the model, not only the model: the system prompt, RAG documents, tools, agents and the data they can reach.
+RedWitness attacks the application around the model, not only the model: the system prompt, RAG documents, tools, agents and the data they can reach.
 
 <table>
 <tr><th width="24%" align="left">Attack</th><th width="50%" align="left">What it checks</th><th width="16%" align="left">Example</th><th width="10%" align="left">OWASP</th></tr>
@@ -69,9 +69,9 @@ AIVeritX attacks the application around the model, not only the model: the syste
 
 **Ready to run:** an OWASP LLM Top 10 starter kit (10 templates) and 10 advanced scenarios (tool sandbox, agent chains, Crescendo, Markdown exfiltration, multimodal, campaigns, knowledge map, PLAGUE and persona, and a 12-technique jailbreak set). Bring your own payloads as TXT, JSON, JSONL, CSV or YAML, and let the optional attacker agent rewrite cases the target refused. Results also map to OWASP Agentic (ASI), MITRE ATLAS, NIST AI RMF and OWASP AISVS.
 
-## Why AIVeritX
+## Why RedWitness
 
-Most AI pentest tools tell you what the model said. AIVeritX tells you **whether you can believe it** and **proves it was safe to run**: no request leaves without a signed scope, and no finding is reported without a verbatim quote, a replay and a second opinion.
+Most AI pentest tools tell you what the model said. RedWitness tells you **whether you can believe it** and **proves it was safe to run**: no request leaves without a signed scope, and no finding is reported without a verbatim quote, a replay and a second opinion.
 
 <table>
 <tr><th width="24%" align="left">Safeguard</th><th width="52%" align="left">What it prevents</th><th width="24%" align="left">Where to see it</th></tr>
@@ -87,7 +87,7 @@ Most AI pentest tools tell you what the model said. AIVeritX tells you **whether
 ### What it does differently
 
 <table>
-<tr><th width="35%" align="left">Usual weak spot</th><th width="65%" align="left">How AIVeritX handles it</th></tr>
+<tr><th width="35%" align="left">Usual weak spot</th><th width="65%" align="left">How RedWitness handles it</th></tr>
 <tr><td>&quot;The tool can hit anything I point it at&quot;</td><td>Signed scope and Governor on every request; IP pinning; cloud metadata always blocked</td></tr>
 <tr><td>&quot;The judge said so&quot;</td><td>Verbatim quote check, k-of-n replay, canaries, deterministic rules, human review</td></tr>
 <tr><td>&quot;An AI attacker with free rein&quot;</td><td>Rewrites stay inside operator-allowed families, in bounded rounds, within budget</td></tr>
@@ -102,7 +102,7 @@ The engine holds **no attack content**: every message, tool definition and trans
 **Requirements:** Docker with Compose v2 (Docker Desktop on macOS and Windows, Docker Engine on Linux) and a free port 3000.
 
 ```bash
-git clone https://github.com/capture0x/AIVeritX.git && cd AIVeritX
+git clone https://github.com/capture0x/redwitness.git && cd redwitness
 ./install.sh
 ```
 
@@ -122,7 +122,7 @@ It then builds and starts the stack and prints the address and the first admin p
 docker compose up -d --build --wait
 ```
 
-Add your judge key to `.env` (for example `ANTHROPIC_API_KEY=...`), then run `docker compose up -d` again. **Back up `AIVERITX_SCOPE_KEYS`** from `.env`: without it, previously signed scopes can no longer be verified.
+Add your judge key to `.env` (for example `ANTHROPIC_API_KEY=...`), then run `docker compose up -d` again. **Back up `REDWITNESS_SCOPE_KEYS`** from `.env`: without it, previously signed scopes can no longer be verified.
 
 </details>
 
@@ -181,7 +181,7 @@ For an app that does not speak the OpenAI or Anthropic format (for example a web
 
 ### Auditing an MCP server
 
-Add the server to a scope with the provider `mcp` and the class **MCP server audit**, then use *Testing → MCP Servers*. AIVeritX only lists the server's tools, prompts and resources (it never calls a tool) and reports poisoned descriptions, risky tools, secrets, open access and changes since the last scan. Details: [docs/FEATURES.md](docs/FEATURES.md#mcp-server-audit).
+Add the server to a scope with the provider `mcp` and the class **MCP server audit**, then use *Testing → MCP Servers*. RedWitness only lists the server's tools, prompts and resources (it never calls a tool) and reports poisoned descriptions, risky tools, secrets, open access and changes since the last scan. Details: [docs/FEATURES.md](docs/FEATURES.md#mcp-server-audit).
 
 ### Testing a model on your own machine
 
@@ -202,12 +202,12 @@ An admin issues an API token under **Settings → CI/CD access tokens** (bound t
 
 ```bash
 # 1. start (returns at once)
-curl -sf -X POST https://aiveritx.example/api/scan-ci \
-  -H "Authorization: Bearer $AIVERITX_TOKEN" -H "Content-Type: application/json" \
+curl -sf -X POST https://redwitness.example/api/scan-ci \
+  -H "Authorization: Bearer $REDWITNESS_TOKEN" -H "Content-Type: application/json" \
   -d '{"scope_id":"<id>","endpoint_url":"<target>","library_id":"<id>","fail_on":"high"}'
 # -> {"job_id": "...", "status": "queued"}
 # 2. poll until status != running
-curl -sf -H "Authorization: Bearer $AIVERITX_TOKEN" https://aiveritx.example/api/scan-ci/<job_id>
+curl -sf -H "Authorization: Bearer $REDWITNESS_TOKEN" https://redwitness.example/api/scan-ci/<job_id>
 ```
 
 Omit `library_id` to run the built-in OWASP starter kit (`owasp`: list of ids, default all ten). The result is JSON with a `summary`, a findings list (no prompts, target responses or evidence text) and a `gate` object: `passed` is `false` when a **verified** finding is at least `fail_on` severe, and also when the scan did not complete, so an incomplete scan never passes a pipeline. Limits: 6 starts per minute and 2 concurrent scans per token. Every call is audited as `ci:<token name>`; scans run only under the signed scope and never use adaptive mode.
@@ -330,18 +330,18 @@ Every module is explained in detail, with screenshots, in the **[feature guide](
 
 *Screenshots use the deterministic mock target and mock helper models in `sandbox/`, not real models.*
 
-## Where AIVeritX fits
+## Where RedWitness fits
 
-Each of these tools is good at something different. AIVeritX is built for teams who need **authorized, reproducible and auditable** results rather than the largest probe count.
+Each of these tools is good at something different. RedWitness is built for teams who need **authorized, reproducible and auditable** results rather than the largest probe count.
 
 | | Focus | Typical use |
 |---|---|---|
 | [promptfoo](https://github.com/promptfoo/promptfoo) | Evals and red teaming from a CLI and config files | Developer-side regression and eval loops |
 | [garak](https://github.com/NVIDIA/garak) | Probe-based LLM vulnerability scanner | Broad probing of a model with many known attacks |
 | [PyRIT](https://github.com/Azure/PyRIT) | Python framework for orchestrating risk identification | Custom research and automation in code |
-| **AIVeritX** | Web platform: signed scope, evidence, replay, audit, compliance mapping, defense efficacy | Authorized assessments you must defend to a client or an auditor |
+| **RedWitness** | Web platform: signed scope, evidence, replay, audit, compliance mapping, defense efficacy | Authorized assessments you must defend to a client or an auditor |
 
-They combine well: bring payloads from other projects with the importer and let AIVeritX run them under a scope and verify the findings.
+They combine well: bring payloads from other projects with the importer and let RedWitness run them under a scope and verify the findings.
 
 ## How it works
 
@@ -429,17 +429,17 @@ Template: [`.env.example`](.env.example). In Docker **all** variables in `.env` 
 | Variable | Required | Description |
 |---|---|---|
 | `POSTGRES_PASSWORD` | yes (Docker) | PostgreSQL password (inside the compose network only) |
-| `AIVERITX_DATABASE_URL` | yes (non-Docker) | `postgresql://user:password@host:5432/database` (compose sets it up in Docker) |
-| `AIVERITX_SCOPE_KEYS` | yes | Scope signing keys: `id:64hex[,id2:64hex]`. To rotate, add another key and set `AIVERITX_SCOPE_ACTIVE_KEY=id2` (old ones remain for verification) |
-| `AIVERITX_ADMIN_PASSWORD` | yes | Password of the first `admin` account (≥ 12 characters). Used **only while the users table is empty**; afterwards it is managed on the Users page |
-| `AIVERITX_SESSION_SECRET` | recommended | Session cookie signing secret. If empty it is random per process (sessions drop on restart) |
-| `AIVERITX_COOKIE_SECURE` | no | `1` behind TLS |
-| `AIVERITX_ALLOWED_HOSTS` | no | Extra names for the backend's Host validation (comma separated). In Docker `backend` is automatic |
-| `AIVERITX_PORT` | no | The UI's host port (default 3000) |
-| `AIVERITX_API` | no | *UI build argument*: the `/api` proxy address (Docker: `http://backend:8000`; local: `http://127.0.0.1:8000`) |
-| `AIVERITX_TEST_DSN` | no | Admin DSN for the tests; if not given a temporary PostgreSQL cluster is started |
+| `REDWITNESS_DATABASE_URL` | yes (non-Docker) | `postgresql://user:password@host:5432/database` (compose sets it up in Docker) |
+| `REDWITNESS_SCOPE_KEYS` | yes | Scope signing keys: `id:64hex[,id2:64hex]`. To rotate, add another key and set `REDWITNESS_SCOPE_ACTIVE_KEY=id2` (old ones remain for verification) |
+| `REDWITNESS_ADMIN_PASSWORD` | yes | Password of the first `admin` account (≥ 12 characters). Used **only while the users table is empty**; afterwards it is managed on the Users page |
+| `REDWITNESS_SESSION_SECRET` | recommended | Session cookie signing secret. If empty it is random per process (sessions drop on restart) |
+| `REDWITNESS_COOKIE_SECURE` | no | `1` behind TLS |
+| `REDWITNESS_ALLOWED_HOSTS` | no | Extra names for the backend's Host validation (comma separated). In Docker `backend` is automatic |
+| `REDWITNESS_PORT` | no | The UI's host port (default 3000) |
+| `REDWITNESS_API` | no | *UI build argument*: the `/api` proxy address (Docker: `http://backend:8000`; local: `http://127.0.0.1:8000`) |
+| `REDWITNESS_TEST_DSN` | no | Admin DSN for the tests; if not given a temporary PostgreSQL cluster is started |
 | `ANTHROPIC_API_KEY` etc. | for the judge | Judge/target API keys. **Never written to the database**; only the variable **name** is given in the scope (`api_key_env`) and in Settings |
-| `AIVERITX_INSECURE_NO_AUTH` | no | **Local development only:** turns authentication off (everyone is admin). Never in production |
+| `REDWITNESS_INSECURE_NO_AUTH` | no | **Local development only:** turns authentication off (everyone is admin). Never in production |
 
 ### Roles (RBAC)
 
@@ -459,22 +459,22 @@ The last active admin cannot be demoted. Every refused access is written to the 
 | Stop / start | `docker compose stop` / `docker compose start` |
 | Logs | `docker compose logs -f backend` |
 | Update | `git pull && docker compose up -d --build` (the database schema is upgraded on start; back up first) |
-| Backup | `docker compose exec db pg_dump -U aiveritx aiveritx > backup.sql` |
+| Backup | `docker compose exec db pg_dump -U redwitness redwitness > backup.sql` |
 | Sandbox runner | `docker compose --profile sandbox up -d` |
 | Uninstall | `docker compose down -v` (**deletes the database**), then remove the folder |
 
-**Deployment security:** PostgreSQL and the API are **not exposed** to the host; the UI binds to `127.0.0.1` only. To open it to other machines, put a TLS-terminating reverse proxy in front and set `AIVERITX_COOKIE_SECURE=1` in `.env`. The images run as a non-root user and the backend image contains no test or dev files.
+**Deployment security:** PostgreSQL and the API are **not exposed** to the host; the UI binds to `127.0.0.1` only. To open it to other machines, put a TLS-terminating reverse proxy in front and set `REDWITNESS_COOKIE_SECURE=1` in `.env`. The images run as a non-root user and the backend image contains no test or dev files.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Port 3000 is already in use | `./install.sh --port 3100`, or set `AIVERITX_PORT` in `.env` and run `docker compose up -d` |
+| Port 3000 is already in use | `./install.sh --port 3100`, or set `REDWITNESS_PORT` in `.env` and run `docker compose up -d` |
 | Cannot reach the Docker daemon | Start Docker, or add your user to the `docker` group and sign in again |
 | The judge LLM is not configured | Add the key to `.env`, run `docker compose up -d`, then choose the model in *Settings → Judge LLM* |
-| Forgot the admin password | The first password is `AIVERITX_ADMIN_PASSWORD` in `.env` (used only until it is changed). After that, another admin resets it on the *Users* page |
-| API answers `503` | No admin password and no user exist: set `AIVERITX_ADMIN_PASSWORD` (12+ characters) in `.env` and run `docker compose up -d` (fail-closed by design) |
-| Signed scopes no longer verify | `AIVERITX_SCOPE_KEYS` changed. Restore it from your backup of `.env` |
+| Forgot the admin password | The first password is `REDWITNESS_ADMIN_PASSWORD` in `.env` (used only until it is changed). After that, another admin resets it on the *Users* page |
+| API answers `503` | No admin password and no user exist: set `REDWITNESS_ADMIN_PASSWORD` (12+ characters) in `.env` and run `docker compose up -d` (fail-closed by design) |
+| Signed scopes no longer verify | `REDWITNESS_SCOPE_KEYS` changed. Restore it from your backup of `.env` |
 | A local model is not reachable | See [Testing a model on your own machine](#testing-a-model-on-your-own-machine) |
 | Something else | `docker compose ps` and `docker compose logs --tail 50 backend`, then [open an issue](../../issues/new/choose) |
 
@@ -533,21 +533,21 @@ Keep the design rules: the engine holds no attack content (it lives in the libra
 
 ## Legal disclaimer and responsible use
 
-AIVeritX sends adversarial prompts to the systems it tests. **It is intended for legal, authorized security testing only.**
+RedWitness sends adversarial prompts to the systems it tests. **It is intended for legal, authorized security testing only.**
 
-- **Authorization is required.** Use AIVeritX only against systems you own or for which you have explicit, written permission from the owner. The signed scope records that authorization and makes it auditable, but it does not replace the owner's permission.
+- **Authorization is required.** Use RedWitness only against systems you own or for which you have explicit, written permission from the owner. The signed scope records that authorization and makes it auditable, but it does not replace the owner's permission.
 - **You are responsible for compliance.** You must follow all laws and regulations that apply to you and to the target, your contracts, and the target's terms of service, including the usage policies of any AI provider whose models or APIs you test or use as a judge.
 - **No warranty, no liability.** The software is provided "as is", without warranty of any kind (see [`LICENSE`](LICENSE)). The authors and contributors are not liable for any damage, data loss, service disruption, costs (for example API usage fees) or legal consequences that result from using or misusing it.
 - **Disclose responsibly.** Report vulnerabilities you find to the system's owner through their disclosure process, and do not use findings to harm anyone.
 
-Using AIVeritX for unauthorized access, attacks on systems you do not have permission to test, or any other illegal purpose is strictly prohibited. This section is not legal advice.
+Using RedWitness for unauthorized access, attacks on systems you do not have permission to test, or any other illegal purpose is strictly prohibited. This section is not legal advice.
 
 ## Support
 
-If AIVeritX saves you time or catches something real, a star helps other security teams find it.
+If RedWitness saves you time or catches something real, a star helps other security teams find it.
 
 ## License
 
-AIVeritX is licensed under the **[GNU Affero General Public License v3.0](LICENSE)**. Copyright (C) 2026 tmrswrr.
+RedWitness is licensed under the **[GNU Affero General Public License v3.0](LICENSE)**. Copyright (C) 2026 tmrswrr.
 
 You may use, study, modify and distribute it, including commercially. If you distribute a modified version, or offer one to users over a network (SaaS), you must make its complete source code available under the same license.

@@ -1,8 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
+import BrandMark from "@/components/BrandMark";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, ShieldAlert, Sparkles } from "lucide-react";
+import { Lock, ShieldAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -24,8 +25,8 @@ export default function Login() {
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-70" />
       <motion.form onSubmit={submit} initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.5 }} className="glass relative w-full max-w-sm rounded-3xl p-8">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-4 grid h-14 w-14 animate-float place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-glow"><Sparkles className="h-7 w-7 text-snow" /></div>
-          <h1 className="text-gradient text-2xl font-semibold">AIVeritX</h1>
+          <BrandMark size={56} className="mb-4 animate-float rounded-2xl shadow-glow" />
+          <h1 className="text-gradient text-2xl font-semibold">RedWitness</h1>
           <p className="mt-1 text-sm text-slate-400">AI Orchestration &amp; Test Platform</p>
         </div>
         {problem && <div className="mb-4 flex gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-200"><ShieldAlert className="h-4 w-4 shrink-0" />{problem}</div>}

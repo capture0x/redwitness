@@ -20,8 +20,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     let alive = true;
     api("/auth/status").then((s) => { if (!alive) return; setOk(!!s.authenticated); setMe(s.user ?? null); if (!s.authenticated && path !== "/login") router.replace("/login"); }).catch(() => { if (!alive) return; setOk(false); if (path !== "/login") router.replace("/login"); });
     const un = () => { setOk(false); router.replace("/login"); };
-    window.addEventListener("aiveritx:unauthorized", un);
-    return () => { alive = false; window.removeEventListener("aiveritx:unauthorized", un); };
+    window.addEventListener("redwitness:unauthorized", un);
+    return () => { alive = false; window.removeEventListener("redwitness:unauthorized", un); };
   }, [path, router]);
 
   if (path === "/login") return <TooltipProvider><AuroraBackground />{children}</TooltipProvider>;

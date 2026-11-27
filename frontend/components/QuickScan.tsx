@@ -64,7 +64,7 @@ export default function QuickScan() {
   return (
     <Card data-testid="quick-scan"><CardContent className="space-y-6 p-7">
       <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/30 to-blue-500/20 text-violet-200"><ScanSearch className="h-5 w-5" /></div>
-        <div><div className="text-lg font-semibold text-white">Scan a target</div><p className="text-sm text-slate-400">Enter the address and how to sign in. AIVeritX runs the whole OWASP LLM Top 10 kit plus Crescendo, Markdown-leak and 12 jailbreak-technique checks (and tool abuse if you attest below) in one run. It still creates a short-lived signed scope for you; you review it first.</p></div></div>
+        <div><div className="text-lg font-semibold text-white">Scan a target</div><p className="text-sm text-slate-400">Enter the address and how to sign in. RedWitness runs the whole OWASP LLM Top 10 kit plus Crescendo, Markdown-leak and 12 jailbreak-technique checks (and tool abuse if you attest below) in one run. It still creates a short-lived signed scope for you; you review it first.</p></div></div>
 
       {err && <Notice tone="red">{err}</Notice>}
       {system && !system.judge_configured && <Notice tone="amber"><b>The judge model is not set up.</b> Put its API key in your .env file, then choose the model under <Link href="/settings" className="underline">Settings → Judge LLM</Link>.</Notice>}
@@ -108,7 +108,7 @@ export default function QuickScan() {
           {plan.categories_skipped?.length > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100" data-testid="qs-skipped">Not run: {plan.categories_skipped.map((c: string) => c.split("_")[0]).join(", ")}. {plan.skip_note || "Tool-abuse categories need the test-environment attestation above."} They stay “Not tested” in the matrix.</div>}
           <div className="font-mono text-[11px] text-slate-500">digest {plan.digest}</div>
           <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-slate-200"><Check_ checked={auth} onCheckedChange={(v) => setAuth(!!v)} data-testid="qs-authorized" />
-            <span>I am authorized to test this target. I understand AIVeritX will send many test requests to it, within the limits above, and that this confirmation is recorded in the audit log.</span></label>
+            <span>I am authorized to test this target. I understand RedWitness will send many test requests to it, within the limits above, and that this confirmation is recorded in the audit log.</span></label>
           <div className="flex gap-2"><Button size="lg" disabled={!auth || !!busy} onClick={start} data-testid="qs-start">{busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}Sign and start scan</Button><Button variant="ghost" onClick={() => setPlan(null)}>Change</Button></div>
         </div>)}
     </CardContent></Card>

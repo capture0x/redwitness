@@ -2,7 +2,7 @@
 # Interactive setup: asks for the judge LLM key, the UI port and the optional sandbox runner, and writes the answers to .env (mode 600).
 # Safe to run again: existing values are kept unless you type a new one. Without a terminal (CI, pipes) nothing is asked.
 #   ./scripts/setup-wizard.sh            ask questions
-#   ./scripts/setup-wizard.sh --yes      ask nothing; take ANTHROPIC_API_KEY / AIVERITX_PORT from the environment if set
+#   ./scripts/setup-wizard.sh --yes      ask nothing; take ANTHROPIC_API_KEY / REDWITNESS_PORT from the environment if set
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -31,7 +31,7 @@ set_env() {
 valid_secret() { [[ "$1" =~ ^[A-Za-z0-9._~+/=:-]{8,300}$ ]]; }
 
 if [ "$INTERACTIVE" = 1 ]; then
-  bold "AIVeritX setup"
+  bold "RedWitness setup"
   echo "Keys are written only to .env on this machine (never to the database) and are not shown on screen."
   echo
   echo "1) Judge LLM: the model that decides whether an answer broke a rule. A strong model is recommended."
@@ -56,18 +56,18 @@ if [ "$INTERACTIVE" = 1 ]; then
     [ "$var" = OPENAI_API_KEY ] && echo "After sign-in choose Settings -> Judge LLM -> provider openai_compat, set the model and endpoint, and enter OPENAI_API_KEY as the key variable name."
   fi
   echo
-  read -r -p "2) UI port on this machine [$(get_env AIVERITX_PORT)]: " port; PORT_ARG="${port:-$PORT_ARG}"
+  read -r -p "2) UI port on this machine [$(get_env REDWITNESS_PORT)]: " port; PORT_ARG="${port:-$PORT_ARG}"
   echo
   echo "3) Optional sandbox runner: analyses unsafe model output (HTML, SQL) in an isolated container with no network."
   read -r -p "Enable it? [y/N]: " sb; [[ "${sb:-N}" =~ ^[Yy] ]] && SANDBOX=1
 else
   [ -n "${ANTHROPIC_API_KEY:-}" ] && [ -z "$(get_env ANTHROPIC_API_KEY)" ] && valid_secret "$ANTHROPIC_API_KEY" && set_env ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
-  [ -z "$PORT_ARG" ] && PORT_ARG="${AIVERITX_PORT:-}"
+  [ -z "$PORT_ARG" ] && PORT_ARG="${REDWITNESS_PORT:-}"
 fi
 
 if [ -n "$PORT_ARG" ]; then
-  if [[ "$PORT_ARG" =~ ^[0-9]+$ ]] && [ "$PORT_ARG" -ge 1024 ] && [ "$PORT_ARG" -le 65535 ]; then set_env AIVERITX_PORT "$PORT_ARG"
-  else echo "Port must be a number from 1024 to 65535; keeping $(get_env AIVERITX_PORT)." >&2; fi
+  if [[ "$PORT_ARG" =~ ^[0-9]+$ ]] && [ "$PORT_ARG" -ge 1024 ] && [ "$PORT_ARG" -le 65535 ]; then set_env REDWITNESS_PORT "$PORT_ARG"
+  else echo "Port must be a number from 1024 to 65535; keeping $(get_env REDWITNESS_PORT)." >&2; fi
 fi
 [ "$SANDBOX" = 1 ] && set_env COMPOSE_PROFILES sandbox
 exit 0

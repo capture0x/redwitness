@@ -31,8 +31,8 @@ def test_model_orders_findings_ids_and_executive_summary():
     r = run_dict(findings=[finding(id="a", case_id="c-low", severity="low", title="low one"), finding(id="b", case_id="c-crit", severity="critical", category="tool_abuse", title="crit one"),
                            finding(id="c", case_id="c-cand", status="candidate", severity="critical", title="not verified")])
     m = model([r])
-    assert [(f["id"], f["title"]) for f in m["findings"]] == [("AIX-001", "crit one"), ("AIX-002", "low one")]   # candidate left out by default
-    assert m["summary"]["total"] == 2 and m["summary"]["counts"]["critical"] == 1 and m["summary"]["top"][0]["id"] == "AIX-001"
+    assert [(f["id"], f["title"]) for f in m["findings"]] == [("RW-001", "crit one"), ("RW-002", "low one")]   # candidate left out by default
+    assert m["summary"]["total"] == 2 and m["summary"]["counts"]["critical"] == 1 and m["summary"]["top"][0]["id"] == "RW-001"
     assert m["summary"]["priorities"][0] == clientreport.REMEDIATION["tool_abuse"][0]
     assert m["meta"]["client"] == "Acme Corp" and m["meta"]["classification"] == "Confidential"
     f = m["findings"][0]
@@ -80,7 +80,7 @@ def test_pdf_and_docx_carry_the_same_report():
     pdf = PdfReader(io.BytesIO(clientreport_pdf(m)))
     text = "\n".join(p.extract_text() for p in pdf.pages)
     assert len(pdf.pages) >= 5
-    for want in ("AI Penetration Test Report", "Confidential", "Executive summary", "Scope and authorization", "AIX-001", "AIX-002", "Steps to reproduce",
+    for want in ("AI Penetration Test Report", "Confidential", "Executive summary", "Scope and authorization", "RW-001", "RW-002", "Steps to reproduce",
                  "Remediation", "Appendix A", "Page 1 of"):
         assert want in text, want
     docx = clientreport.to_docx(m)
@@ -88,7 +88,7 @@ def test_pdf_and_docx_carry_the_same_report():
         names = z.namelist()
         body = z.read("word/document.xml").decode()
     assert "word/vbaProject.bin" not in names and not any(n.endswith(".bin") for n in names)          # no macros or embedded objects
-    for want in ("AI Penetration Test Report", "AIX-001", "AIX-002", "Steps to reproduce", "Appendix A"):
+    for want in ("AI Penetration Test Report", "RW-001", "RW-002", "Steps to reproduce", "Appendix A"):
         assert want in body, want
     assert "<script>" not in body and "&lt;script&gt;" in body                                     # stored as text, not markup
     assert "<w:instrText" not in body and "<w:fldSimple" not in body and "<w:hyperlink" not in body   # no fields, no live links
@@ -115,7 +115,7 @@ def test_api_builds_pdf_and_docx_for_an_engagement_and_audits_it(api):
     assert r.status_code == 200, r.text
     assert r.content.startswith(b"%PDF") and "pentest-report-" in r.headers["content-disposition"]
     text = "\n".join(p.extract_text() for p in PdfReader(io.BytesIO(r.content)).pages)
-    assert "AIX-001" in text and "seen in 2 runs" in text and "Acme Corp" in text
+    assert "RW-001" in text and "seen in 2 runs" in text and "Acme Corp" in text
     d = api.post("/api/client-report", json={"run_ids": [rid], "format": "docx"})
     assert d.status_code == 200 and d.content[:2] == b"PK" and d.headers["content-type"].startswith("application/vnd.openxmlformats")
     with api.app.state.store.conn() as c:

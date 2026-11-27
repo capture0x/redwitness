@@ -57,7 +57,7 @@ opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.coo
 
 def call(method, path, body=None):
     req = urllib.request.Request(API + path, method=method, data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"content-type": "application/json", "x-aiveritx-csrf": "1"})
+                                 headers={"content-type": "application/json", "x-redwitness-csrf": "1"})
     try:
         with opener.open(req, timeout=60) as r:
             return r.status, json.loads(r.read() or b"null")

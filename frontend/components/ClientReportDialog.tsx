@@ -21,7 +21,7 @@ export default function ClientReportDialog({ open, onOpenChange, run }: { open: 
   const download = async () => {
     setErr(""); setBusy(true);
     try {
-      const r = await fetch("/api/client-report", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-aiveritx-csrf": "1" },
+      const r = await fetch("/api/client-report", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-redwitness-csrf": "1" },
         body: JSON.stringify({ ...f, run_ids: [run.id, ...extra] }) });
       if (!r.ok) { let m = `HTTP ${r.status}`; try { const d = await r.json(); m = typeof d.detail === "string" ? d.detail : d.detail?.message || m; } catch { /* not JSON */ } throw new Error(m); }
       const blob = await r.blob();

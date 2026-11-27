@@ -139,7 +139,7 @@ export default function Scopes() {
           {prep && <>
             <DialogTitle>Signing approval <span className="ml-2 text-sm font-normal text-slate-500">version v{prep.version}</span></DialogTitle>
             <DialogDescription>The content below will be signed <b className="text-slate-200">exactly as shown</b>. If the digest you approved differs from the digest of the content that is saved, the server refuses to sign.</DialogDescription>
-            {!prep.signing_available && <Notice tone="red">The server has no signing key; this scope cannot be signed (AIVERITX_SCOPE_KEYS).</Notice>}
+            {!prep.signing_available && <Notice tone="red">The server has no signing key; this scope cannot be signed (REDWITNESS_SCOPE_KEYS).</Notice>}
             <div className="mt-4 space-y-4 text-sm">
               <div className="grid gap-2 md:grid-cols-3"><KV k="Name" v={prep.content.name} /><KV k="Client" v={prep.content.client} /><KV k="Authorized by" v={prep.content.authorized_by} /><KV k="Start" v={fmtDate(prep.content.valid_from)} /><KV k="End" v={fmtDate(prep.content.valid_until)} /><KV k="Approver" v={prep.approver} /></div>
               <KV k="Authorization document digest" v={prep.content.authorization_doc_sha256} mono />

@@ -50,7 +50,7 @@ export default function OwaspScanDialog({ open, onOpenChange, preset }: { open: 
         <DialogTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5 text-violet-300" />OWASP LLM Top 10 scan</DialogTitle>
         <DialogDescription>Runs the starter kit's basic quality probes for the selected categories, inside your signed scope.</DialogDescription>
         {valid.length === 0 && <div className="mt-4 rounded-xl border border-violet-400/30 bg-violet-500/10 p-4 text-sm text-slate-200" data-testid="owasp-noscope"><b className="text-white">No signed scope yet.</b> {can("admin")
-          ? <>You do not need to build one by hand: enter the target address and sign-in on one screen and AIVeritX creates a short-lived signed scope for you. <Link href={`/new?owasp=${encodeURIComponent(sel.join(","))}`} onClick={() => onOpenChange(false)}><Button className="mt-3 w-full" data-testid="owasp-to-quick"><Play className="h-4 w-4" />Scan a target by URL ({sel.length} categories)</Button></Link></>
+          ? <>You do not need to build one by hand: enter the target address and sign-in on one screen and RedWitness creates a short-lived signed scope for you. <Link href={`/new?owasp=${encodeURIComponent(sel.join(","))}`} onClick={() => onOpenChange(false)}><Button className="mt-3 w-full" data-testid="owasp-to-quick"><Play className="h-4 w-4" />Scan a target by URL ({sel.length} categories)</Button></Link></>
           : <>An admin has to sign a scope for the target first (Scopes), or run a quick scan for you.</>}</div>}
         {err && <div className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{typeof err === "string" ? err : err.message}</div>}
         {res ? (

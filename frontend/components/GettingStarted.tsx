@@ -48,7 +48,7 @@ export default function GettingStarted() {
     <Card data-testid="getting-started" className="mb-8 overflow-hidden border-indigo-400/20"><CardContent className="p-0">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] bg-gradient-to-r from-indigo-500/[0.10] to-transparent px-7 py-5">
         <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-500/20 text-indigo-200"><Rocket className="h-5 w-5" /></div>
-          <div><div className="text-[16px] font-semibold text-white">Welcome to AIVeritX</div><p className="text-[13px] text-slate-400">Three steps to your first verified result. Step {doneCount + 1} of {steps.length}.</p></div></div>
+          <div><div className="text-[16px] font-semibold text-white">Welcome to RedWitness</div><p className="text-[13px] text-slate-400">Three steps to your first verified result. Step {doneCount + 1} of {steps.length}.</p></div></div>
         <div className="flex items-center gap-4"><div className="w-40"><Meter value={doneCount} max={steps.length} /></div>
           <button data-testid="gs-skip" onClick={() => setPref(ONBOARDING_DISMISSED, true)} className="text-[12px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline">Skip for now</button></div>
       </div>

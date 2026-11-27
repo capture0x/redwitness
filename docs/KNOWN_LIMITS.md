@@ -1,6 +1,6 @@
-# AIVeritX known limits
+# RedWitness known limits
 
-An honest list of what AIVeritX does not do yet, or does only partly. The most important points are also in the [README](../README.md#known-limits).
+An honest list of what RedWitness does not do yet, or does only partly. The most important points are also in the [README](../README.md#known-limits).
 
 - **The judge can be wrong.** Small local models are not reliable judges (in our measurements one model never produced a valid schema, and one said "no violation" for a real leak). The defense is layered (quote verification + replay + canary + human review) but it is no substitute for judge quality; measurements: [`docs/LLM_REDTEAM.md`](LLM_REDTEAM.md) §12.
 - The OWASP view is **not a certificate**; LLM03/04/08 are limited in black-box testing.

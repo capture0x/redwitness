@@ -6,7 +6,7 @@ const RULES: [RegExp, string][] = [
   [/target with this name already exists/i, "A target with this name already exists. Choose another name, or edit the existing one on the Targets page."],
   [/Target not found/i, "This target no longer exists. Reload the page and pick another one."],
   [/Confirm that you are authorized/i, "Tick “I am authorized to test this target” to continue."],
-  [/Review the scan first|expected_hash\) is required/i, "Press Review first and read the plan before you sign. AIVeritX never signs a scope you have not seen."],
+  [/Review the scan first|expected_hash\) is required/i, "Press Review first and read the plan before you sign. RedWitness never signs a scope you have not seen."],
   [/No runnable case/i, "No test case fits this selection. Import the ready-made templates in Test Library (or widen the scope's attack classes), then try again."],
   [/Scope not found or already revoked/i, "This scope is no longer valid. Create a new scope version on the Scopes page."],
   [/Tool-abuse checks need the attestation/i, "Tick the box that says the target's tools run in a test environment, or switch tool-abuse checks off."],
@@ -19,9 +19,9 @@ export function friendlyError(status: number, reason: string | null, message: st
   for (const [re, text] of RULES) if (re.test(message)) return text;
   if (status === 403) return "You do not have permission for this action. Ask an admin to change your role on the Users page.";
   if (status === 429) return "Too many requests in a short time. Wait a moment and try again.";
-  if (status === 503 && /signing/i.test(message)) return "No signing key is set up, so scopes cannot be signed. Add AIVERITX_SCOPE_KEYS to your .env file (./scripts/init-env.sh creates it) and restart.";
+  if (status === 503 && /signing/i.test(message)) return "No signing key is set up, so scopes cannot be signed. Add REDWITNESS_SCOPE_KEYS to your .env file (./scripts/init-env.sh creates it) and restart.";
   if (status >= 500) return `The server hit an error (${message || `HTTP ${status}`}). Try again. If it repeats, run "docker compose logs backend" and look at the last lines.`;
   return message;
 }
 
-export const NETWORK_ERROR = "Cannot reach the AIVeritX server. Check that it is running (docker compose ps), then reload the page.";
+export const NETWORK_ERROR = "Cannot reach the RedWitness server. Check that it is running (docker compose ps), then reload the page.";

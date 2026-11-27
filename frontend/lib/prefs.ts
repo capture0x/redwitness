@@ -1,7 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 
-const PREFIX = "aiveritx.";
+const PREFIX = "redwitness.";
 const listeners = new Set<() => void>();
 
 function read(key: string): boolean {

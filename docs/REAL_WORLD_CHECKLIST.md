@@ -46,8 +46,8 @@ Expected: `RESULT: PASS`. The script also looks for the admin password, scope si
 6. Manual extras:
 ```bash
 docker compose logs --no-color | grep -iE "sk-[A-Za-z0-9]{8,}|bearer [A-Za-z0-9._-]{12,}|rl_session=" || echo "clean"
-docker compose exec -T db psql -U aiveritx -c "\dt"        # which tables exist
-docker compose exec -T db psql -U aiveritx -c "select * from audit order by 1 desc limit 5"
+docker compose exec -T db psql -U redwitness -c "\dt"        # which tables exist
+docker compose exec -T db psql -U redwitness -c "select * from audit order by 1 desc limit 5"
 ```
 
 ## E. After a restart

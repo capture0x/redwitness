@@ -7,7 +7,7 @@ import Providers from "@/components/Providers";
 import Shell from "@/components/Shell";
 import { THEME_BOOT } from "@/lib/theme";
 
-export const metadata: Metadata = { title: "AIVeritX - AI Orchestration & Test Platform" };
+export const metadata: Metadata = { title: "RedWitness - AI penetration testing" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -14,7 +14,7 @@ export async function api<T = any>(path: string, init?: RequestInit): Promise<T>
   try {
     r = await fetch(`/api${path}`, {
       ...init, credentials: "same-origin",
-      headers: { "content-type": "application/json", ...(method !== "GET" ? { "x-aiveritx-csrf": "1" } : {}), ...(init?.headers || {}) },
+      headers: { "content-type": "application/json", ...(method !== "GET" ? { "x-redwitness-csrf": "1" } : {}), ...(init?.headers || {}) },
     });
   } catch { throw new ApiError(0, "NETWORK", NETWORK_ERROR); }
   const text = await r.text();
@@ -23,7 +23,7 @@ export async function api<T = any>(path: string, init?: RequestInit): Promise<T>
   if (!r.ok) {
     const d = data?.detail;
     const msg = typeof d === "string" ? d : d?.message || (Array.isArray(d) ? d.map((x: any) => x.msg).join("; ") : text) || `HTTP ${r.status}`;
-    if (r.status === 401 && typeof window !== "undefined" && !path.startsWith("/auth/")) window.dispatchEvent(new Event("aiveritx:unauthorized"));
+    if (r.status === 401 && typeof window !== "undefined" && !path.startsWith("/auth/")) window.dispatchEvent(new Event("redwitness:unauthorized"));
     throw new ApiError(r.status, d?.reason ?? null, path.startsWith("/auth/") ? msg : friendlyError(r.status, d?.reason ?? null, msg), msg);
   }
   return data as T;

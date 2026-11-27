@@ -1,4 +1,4 @@
-# AIVeritX backend (FastAPI). Runtime dependencies only; test/dev files do not enter the image.
+# RedWitness backend (FastAPI). Runtime dependencies only; test/dev files do not enter the image.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1

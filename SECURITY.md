@@ -1,10 +1,10 @@
 # Security policy
 
-AIVeritX sends adversarial prompts to systems, so its own security matters.
+RedWitness sends adversarial prompts to systems, so its own security matters.
 
 ## Reporting a vulnerability
 
-**Do not open a public issue.** Use GitHub's private reporting: on the repository page choose *Security → Report a vulnerability* ([direct link](https://github.com/capture0x/AIVeritX/security/advisories/new)). Include what you found, how to reproduce it, and the version or commit.
+**Do not open a public issue.** Use GitHub's private reporting: on the repository page choose *Security → Report a vulnerability* ([direct link](https://github.com/capture0x/redwitness/security/advisories/new)). Include what you found, how to reproduce it, and the version or commit.
 
 You will get an answer as soon as a maintainer can read it. Please give us reasonable time to fix the problem before you disclose it.
 
@@ -19,7 +19,7 @@ You will get an answer as soon as a maintainer can read it. Please give us reaso
 
 ## What is not
 
-- Findings that need `AIVERITX_INSECURE_NO_AUTH=1` (development only).
+- Findings that need `REDWITNESS_INSECURE_NO_AUTH=1` (development only).
 - Weaknesses in a target you scanned; those belong to that target's owner.
 - Denial of service by a user who already has the admin role.
 

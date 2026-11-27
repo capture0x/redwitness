@@ -1,6 +1,6 @@
-# AIVeritX feature guide
+# RedWitness feature guide
 
-This guide explains each part of AIVeritX in detail: what it checks, how a result is decided and where you see it in the UI. For installation and a first scan, start with the [README](../README.md).
+This guide explains each part of RedWitness in detail: what it checks, how a result is decided and where you see it in the UI. For installation and a first scan, start with the [README](../README.md).
 
 **Contents**
 
@@ -334,7 +334,7 @@ Limits: the HTML check is a parser, not a browser, so it proves that active cont
 | Executive summary | Overall risk in plain language, counts per severity, the three most important findings, priority recommendations |
 | Scope and authorization | The signed scope: who approved it and when, validity, scope digest, authorized and tested endpoints, attack classes, limits |
 | Method and severity rating | How tests ran, what "verified" means, what each severity level means |
-| Findings overview | One row per finding with an id (`AIX-001` …), severity, status and OWASP category |
+| Findings overview | One row per finding with an id (`RW-001` …), severity, status and OWASP category |
 | Detailed findings | Description, business impact, numbered steps to reproduce (the messages exactly as sent, turn by turn), the target's reply as evidence, judge quotes, remediation, OWASP and MITRE ATLAS references |
 | Appendices | OWASP LLM Top 10 coverage, requests, conversations, tokens and the audit-chain status |
 
