@@ -24,12 +24,28 @@ These are the reasons the results can be trusted. A change that weakens one is u
 
 ## Development setup
 
-You need Docker with Compose v2 for the full stack, Python 3.12+ and Node 20+ for local work.
+You need Docker with Compose v2 for the full stack, Python 3.12+, Node 20.9+ and PostgreSQL 14+ for local work.
 
 ```bash
 git clone https://github.com/capture0x/AIVeritX.git && cd AIVeritX
-./install.sh --yes          # full stack at http://localhost:3000, or see "Development" in the README for running without Docker
+./install.sh --yes          # full stack at http://localhost:3000
 ```
+
+### Running without Docker
+
+```bash
+# Backend
+cd backend && python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
+export AIVERITX_DATABASE_URL=postgresql://user:password@127.0.0.1:5432/aiveritx
+export AIVERITX_SCOPE_KEYS=k1:$(python -c "import secrets;print(secrets.token_hex(32))")
+export AIVERITX_ADMIN_PASSWORD='at-least-12-characters'
+uvicorn main:create_app --factory --host 127.0.0.1 --port 8000
+
+# UI (another terminal)
+cd frontend && npm install && npm run dev          # http://localhost:3000  (/api -> 127.0.0.1:8000)
+```
+
+To run the production build locally, use `npm run build && npm start`. The build uses `output: "standalone"`, so `npm start` runs `node .next/standalone/server.js` and the `postbuild` step copies `.next/static` next to it. Plain `next start` is not the right command for this build (use `npm run start:next` only if you know why); without the copied assets the page loads without JavaScript and stays on "Verifying session…". The Dockerfile does the same copy.
 
 Folders: `backend/` (FastAPI, engine, tests), `frontend/` (Next.js), `runner/` (sandbox runner), `sandbox/` (isolated E2E), `docs/`.
 
@@ -45,6 +61,9 @@ sandbox/run_e2e.sh mock                         # strict browser checks inside a
 - Add or update a test with every change. A bug fix starts with a test that fails.
 - A change that touches scope, Governor, replay, impact, verifier or sandbox code needs a test that proves the **refusal** path too, not only the happy path.
 - If you change visible UI text or the menu, update `frontend/e2e/e2e.mjs`.
+- **Isolated E2E (`sandbox/`)** runs in a network namespace where only the `lo` interface remains (`unshare -rn`) and proves on every run that outside network access is impossible. It can also run with real local Ollama models (`sandbox/run_e2e.sh ollama`). Latest run output: [`docs/e2e-run/`](docs/e2e-run/).
+- **Module E2E (`sandbox/e2e_modules.py`)** runs after the UI test and drives Defense efficacy, reasoning chains and sandboxed verification through the real HTTP API with the real runner process. No model and no API key needed.
+- **CI** (`.github/workflows/ci.yml`): backend (PostgreSQL service, Python 3.12 and 3.14), UI (`npm ci`, typecheck, build), `pip-audit` and `npm audit --omit=dev`. Dependabot runs weekly.
 
 ## Code style
 
