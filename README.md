@@ -1,8 +1,9 @@
 <div align="center">
 
-<img src="docs/logo.svg" alt="AIVeritX logo" width="88" height="88">
-
-<h1>AIVeritX</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
+  <img src="docs/logo.png" alt="AIVeritX" width="240">
+</picture>
 
 <p><strong>AI penetration testing platform for LLM applications</strong></p>
 
