@@ -413,7 +413,7 @@ def test_preview_hash_for_new_version_matches_saved_version(env):
 
 
 def test_list_scopes_reports_validity_and_reason(env):
-    sid = env.store.create_scope(scope(), "admin", RING)
+    env.store.create_scope(scope(), "admin", RING)
     assert env.store.list_scopes(RING)[0]["valid"] is True
     row = env.store.list_scopes(Keyring())[0]
     assert row["valid"] is False and row["invalid_reason"] == "SCOPE_SIGNATURE_INVALID" and row["invalid_message"]

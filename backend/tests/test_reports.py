@@ -41,10 +41,10 @@ def run_dict(**kw):
 
 def test_csv_neutralizes_formula_injection_and_keeps_all_columns():
     raw = reports.findings_csv([finding()])
-    assert raw.startswith("﻿".encode())
+    assert raw.startswith("\ufeff".encode())
     rows = list(csv.reader(io.StringIO(raw.decode("utf-8-sig"))))
     assert rows[0] == reports.CSV_COLUMNS and len(rows) == 2
-    r = dict(zip(rows[0], rows[1]))
+    r = dict(zip(rows[0], rows[1], strict=True))
     assert r["title"].startswith("'-title")                              # a title starting with '-' was neutralized
     assert r["judge_quotes"].startswith("system_prompt_leaked: ")        # the cell starts with the key name, so it cannot be a formula
     for cell in rows[1]:
@@ -130,7 +130,7 @@ def test_api_exports_csv_and_pdf_with_audit(api):
 
 
 def test_stats_expose_risk_score_pass_rate_and_timeseries(api):
-    rid = make_run(api)
+    make_run(api)
     st = api.get("/api/stats").json()
     assert st["findings_verified"] == 1 and st["severity_counts"]["high"] == 1
     assert st["risk_score"] == 34 and st["risk_label"] == "Medium"                      # 100*(1-exp(-25/60))

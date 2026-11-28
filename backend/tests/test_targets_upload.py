@@ -72,7 +72,7 @@ def test_extract_eml_html_skips_hidden_elements_and_ignores_attachments():
 
 
 @pytest.mark.parametrize("name,data", [
-    ("a.docx", docx_bytes(["zero​width"])),                      # invisible character: refused, never silently cleaned
+    ("a.docx", docx_bytes(["zero\u200bwidth"])),                      # invisible character: refused, never silently cleaned
     ("a.docx", docx_bytes(["x" * 60_000])),                           # too long
     ("a.docx", b"not a zip"), ("a.pdf", b"not a pdf"), ("a.txt", b"hello"), ("a.eml", b""),
     ("a.docx", docx_bytes([""])),                                     # no text
@@ -177,7 +177,7 @@ def test_eml_upload_and_ingest_delivery_and_refusals(tw):
     c = parse_library(tw.admin.get(f"/api/libraries/{d['library_id']}").json()["content"]).cases[0]
     assert c.documents[0].format == "eml" and c.delivery == "ingest" and c.turns == ("Summarize this e-mail.",)
     assert c.documents[0].render().startswith(b"From: sender@example.test")              # re-rendered by our renderer, not the original bytes
-    for body in ({"filename": "a.docx", "content_base64": b64(docx_bytes(["zero​width"]))}, {"filename": "a.txt", "content_base64": b64(b"x")},
+    for body in ({"filename": "a.docx", "content_base64": b64(docx_bytes(["zero\u200bwidth"]))}, {"filename": "a.txt", "content_base64": b64(b"x")},
                  {"filename": "a.docx", "content_base64": "!!!"}, {"filename": "a.eml", "content_base64": b64(EML), "delivery": "weird"}):
         assert tw.op.post("/api/documents/to-case", json=body, headers=H).status_code == 422
     assert tw.viewer.post("/api/documents/to-case", json={"filename": "a.eml", "content_base64": b64(EML)}, headers=H).status_code == 403

@@ -75,11 +75,10 @@ async def verify(llm, *, category: str, expected_behavior: str, sent: list[str],
             f"Judge evidence quotes: {json.dumps({k: v.get('evidence_quote') for k, v in (judge.get('questions') or {}).items() if v.get('answer') == 'yes'}, ensure_ascii=False)}\n"
             f"Code-assessed impact: {(impact or {}).get('label', '-')} ({'; '.join((impact or {}).get('reasons', []))})\n\n"
             f"Messages sent to the target:\n{env_sent}\n\nTarget response:\n{env_resp}\n\nTarget tool calls: {json.dumps(tool_calls, ensure_ascii=False)[:1500]}")
-    total, last = 0, ""
+    total = 0
     for _ in range(2):
         text, tok = await llm.complete(SYSTEM_PROMPT, user, max_tokens)
         total += tok
-        last = text
         d = _extract_json(text)
         if d is not None:
             v = validate(d, response, "\n".join(sent), min_confidence)

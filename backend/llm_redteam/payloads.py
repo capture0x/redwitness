@@ -67,7 +67,7 @@ def family_from_label(label) -> str | None:
 
 
 def _read_records(text: str, fmt_hint: str) -> list:
-    t = text.lstrip("﻿")
+    t = text.lstrip("\ufeff")
     s = t.lstrip()
     try:
         if fmt_hint == "csv" or (fmt_hint == "auto" and "\n" in s and not s.startswith(("[", "{", "-")) and "," in s.split("\n", 1)[0] and ":" not in s.split("\n", 1)[0]):

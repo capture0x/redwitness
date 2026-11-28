@@ -38,7 +38,7 @@ def test_checks_find_each_flaw_once_and_leave_clean_tools_alone():
 
 
 def test_invisible_characters_are_shown_and_encoded_blobs_flagged():
-    i = mcpscan.check_item("tool", {"name": "t", "description": "Plain text​‮ with a hidden part"}, set())
+    i = mcpscan.check_item("tool", {"name": "t", "description": "Plain text\u200b\u202e with a hidden part"}, set())
     assert i[0]["code"] == "MCP_HIDDEN_CHARACTERS" and "<U+200B>" in i[0]["quote"] and "<U+202E>" in i[0]["quote"]
     b = mcpscan.check_item("tool", {"name": "t", "description": "Data: " + "QUJD" * 20}, set())
     assert [x["code"] for x in b] == ["MCP_ENCODED_PAYLOAD"]
@@ -178,3 +178,29 @@ def test_judge_review_adds_findings_that_need_human_review(fresh_db, target, mcp
     judged = [f for f in run["findings"] if f["evidence"]["mcp"]["code"] == "MCP_JUDGE_SUSPICIOUS"]
     assert run["status"] == "completed" and judged and all(f["status"] == "needs_review" for f in judged)
     assert {f["evidence"]["mcp"]["name"] for f in judged} == {"send_email"} and run["snapshot"]["mcp"]["judge_reviewed"] >= 2
+
+
+def test_a_crash_is_logged_with_its_stack_trace(fresh_db, target, mcp_server):
+    """An unexpected error in a background task marks the run failed AND writes the traceback to the application log."""
+    import logging
+    from fastapi.testclient import TestClient
+    from llm_redteam.auth import Auth
+    from main import create_app
+    from test_api import RING
+
+    class Boom:
+        def __init__(self, *a):
+            raise RuntimeError("simulated crash in the MCP client")
+    records = []
+    h = logging.Handler()
+    h.emit = records.append
+    with TestClient(create_app(fresh_db, RING, auth=Auth(insecure=True), mcp_factory=lambda ep, gov, cred: Boom())) as api:
+        logging.getLogger("redwitness").addHandler(h)
+        try:
+            api.target = target
+            run = _scan(api, _scope(api, mcp_server), f"{mcp_server.base}/mcp")
+        finally:
+            logging.getLogger("redwitness").removeHandler(h)
+    assert run["status"] == "failed" and run["stop_reason"] == "RuntimeError"
+    crash = [r for r in records if r.levelno == logging.ERROR]
+    assert crash and crash[0].exc_info and "simulated crash" in str(crash[0].exc_info[1]) and run["id"] in crash[0].getMessage()

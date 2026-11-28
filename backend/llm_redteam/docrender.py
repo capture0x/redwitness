@@ -64,7 +64,7 @@ def _csv(text: str) -> bytes:
 
 
 def _html(text: str, title: str) -> bytes:
-    paras = "\n".join("<p>" + "<br>\n".join(html.escape(l) for l in p.split("\n")) + "</p>" for p in text.split("\n\n") if p.strip())
+    paras = "\n".join("<p>" + "<br>\n".join(html.escape(ln) for ln in p.split("\n")) + "</p>" for p in text.split("\n\n") if p.strip())
     return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>{html.escape(title)}</title></head>\n<body>\n{paras}\n</body></html>\n').encode("utf-8")
 
 
@@ -87,7 +87,7 @@ def _pdf(text: str) -> bytes:
     objs: list[bytes] = [b"", b"", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]   # 1 catalog, 2 pages, 3 font (filled below)
     kids = []
     for pg in pages:
-        body = "BT /F1 11 Tf 14 TL 50 790 Td\n" + "\n".join(f"({_pdf_escape(l)}) '" for l in pg) + "\nET"
+        body = "BT /F1 11 Tf 14 TL 50 790 Td\n" + "\n".join(f"({_pdf_escape(ln)}) '" for ln in pg) + "\nET"
         stream = body.encode("latin-1", "replace")
         pid, cid = len(objs) + 1, len(objs) + 2
         objs.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents {cid} 0 R >>".encode())
@@ -107,7 +107,7 @@ def _pdf(text: str) -> bytes:
 
 def _docx(text: str) -> bytes:
     esc = lambda s: html.escape(s, quote=False)  # noqa: E731
-    paras = "".join(f'<w:p><w:r><w:t xml:space="preserve">{esc(l)}</w:t></w:r></w:p>' for l in text.split("\n"))
+    paras = "".join(f'<w:p><w:r><w:t xml:space="preserve">{esc(ln)}</w:t></w:r></w:p>' for ln in text.split("\n"))
     parts = {
         "[Content_Types].xml": '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
         "_rels/.rels": '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',

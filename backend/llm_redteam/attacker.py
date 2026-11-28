@@ -8,12 +8,15 @@ Attacker agent: when the target refuses a library case, an Attacker LLM rewrites
     agent aborts instead. The result is then sent through the same Governor, scope limits, judge and replay verification as any case.
   * The engine itself holds no attack content: all wording comes from the library (hashed) and the Attacker model.
 """
+import logging
 import hashlib
 import json
 import secrets
 from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol
+
+log = logging.getLogger("redwitness")
 
 
 class AgentState(str, Enum):
@@ -171,6 +174,7 @@ class Attacker:
             try:
                 text, tokens = await self.llm.complete(SYSTEM_PROMPT, user + (RETRY_HINT.format(why=why, n=len(base)) if attempt else ""), 1500)
             except Exception as e:  # noqa: BLE001
+                log.warning("attacker model call failed", exc_info=True)
                 raise AttackerError("LLM_ERROR:" + type(e).__name__, spent) from None
             spent += tokens
             turns, rationale, why = self._validate(_parse(text), len(base), tried)

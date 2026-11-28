@@ -90,8 +90,8 @@ def assistant_wire(provider: str, text: str, calls: list[dict]) -> dict:
 
 def result_wire(provider: str, calls: list[dict], results: list[str]) -> list[dict]:
     if provider == "anthropic":
-        return [{"role": "user", "content": [{"type": "tool_result", "tool_use_id": c["id"], "content": r} for c, r in zip(calls, results)]}]
-    return [{"role": "tool", "tool_call_id": c["id"], "content": r} for c, r in zip(calls, results)]
+        return [{"role": "user", "content": [{"type": "tool_result", "tool_use_id": c["id"], "content": r} for c, r in zip(calls, results, strict=False)]}]
+    return [{"role": "tool", "tool_call_id": c["id"], "content": r} for c, r in zip(calls, results, strict=False)]
 
 
 def _loads(s):

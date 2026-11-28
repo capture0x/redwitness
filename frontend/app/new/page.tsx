@@ -14,7 +14,6 @@ import { Check_, Meter, Toggle } from "@/components/ui/misc";
 import BiasNotice from "@/components/BiasNotice";
 import Dropzone from "@/components/Dropzone";
 import QuickScan from "@/components/QuickScan";
-import { useMe } from "@/lib/me";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +39,6 @@ export default function NewTest() {
   const [err, setErr] = useState<ApiError | string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
-  const { can } = useMe();
   const [mode, setMode] = useState<"quick" | "custom">("quick");
   const [up, setUp] = useState<any>(null);
   const [upBusy, setUpBusy] = useState(false);

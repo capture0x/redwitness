@@ -45,7 +45,7 @@ INSTRUCTION = re.compile("|".join([
     r"\bsidenote\b|\bhidden (parameter|field|argument)\b",
 ]), re.I)
 SENSITIVE_TARGET = re.compile(r"(~/|\.ssh|id_rsa|\.env\b|/etc/passwd|\bcredentials?\b|\.aws|\bpasswords?\b|\bsecrets?\b|\btokens?\b|\bapi[_ -]?keys?\b)", re.I)
-INVISIBLE = re.compile("[​-‏‪-‮⁠-⁤⁦-⁩﻿\U000e0000-\U000e007f]")
+INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\U000e0000-\U000e007f]")
 B64_BLOB = re.compile(r"[A-Za-z0-9+/]{48,}={0,2}")
 SECRET = re.compile(r"(sk-[A-Za-z0-9_\-]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[abp]-[A-Za-z0-9\-]{10,}|eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{5,}"
                     r"|(?i:(password|passwd|api[_-]?key|secret|token)\s*[:=]\s*)[^\s\"']{8,})")

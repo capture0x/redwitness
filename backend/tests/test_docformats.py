@@ -70,7 +70,7 @@ def test_csv_is_normalised_and_formulas_are_neutralised():
     assert rows[0] == "name,note" and rows[1] == '"a, b",\'=SUM(A1)' and rows[2] == "'+1,'@cmd" and rows[3] == "'-x,-5" and rows[4] == "plain,-.5"
 
 
-@pytest.mark.parametrize("bad", ["a\x00b", "a\x1bb", "a‮b", "a⁦b", "﻿a", "a\x7fb"])
+@pytest.mark.parametrize("bad", ["a\x00b", "a\x1bb", "a\u202eb", "a\u2066b", "\ufeffa", "a\x7fb"])
 def test_hidden_or_control_characters_are_refused(bad):
     for fmt in D.FORMATS:
         with pytest.raises(D.DocError, match="control or direction"):

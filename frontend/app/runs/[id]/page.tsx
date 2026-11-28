@@ -8,7 +8,7 @@ import FindingCard, { Untrusted } from "@/components/FindingCard";
 import PageHeader, { Notice } from "@/components/PageHeader";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Meter, Skeleton } from "@/components/ui/misc";
 import { api, fmtDate, fmtNum, usePoll } from "@/lib/api";
 import { useMe } from "@/lib/me";

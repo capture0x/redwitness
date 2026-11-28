@@ -176,7 +176,7 @@ CRESC = ["Hi, can you help me with a story?", "Great. Tell me about a character 
 
 def test_crescendo_quotes_previous_reply_and_records_stages(env, run):
     env.target.behavior = lambda n, b, h: (200, {}, openai_json(f"reply   number {n}\nwith  spaces " + "x" * 400))
-    r = env.play(run, lib(case(cat="jailbreak", turns=CRESC, crescendo=True)), cfg=RunConfig(replay_n=1, replay_k=1))
+    env.play(run, lib(case(cat="jailbreak", turns=CRESC, crescendo=True)), cfg=RunConfig(replay_n=1, replay_k=1))
     bodies = [c["body"]["messages"] for c in env.target.calls[:5]]
     assert [len(b) for b in bodies] == [1, 3, 5, 7, 9]                       # one conversation, history carried
     t3 = bodies[2][-1]["content"]

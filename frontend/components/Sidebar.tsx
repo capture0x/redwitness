@@ -66,7 +66,7 @@ export default function Sidebar() {
     <aside className="relative flex w-[232px] shrink-0 flex-col border-r border-white/[0.06] bg-sidebar/55 backdrop-blur-xl">
       <div className="px-5 pb-5 pt-6">
         <div className="flex items-center gap-2.5">
-          <BrandMark size={32} className="shadow-glow rounded-[10px]" />
+          <BrandMark size={34} />
           <div className="text-[15px] font-semibold tracking-tight text-white">RedWitness</div>
         </div>
       </div>

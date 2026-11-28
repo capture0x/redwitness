@@ -56,7 +56,7 @@ def findings_csv(findings: list[dict], include_false_positives: bool = False) ->
             (ev.get("impact") or {}).get("impact") or "", f.get("system_status") or f["status"], (f.get("review") or {}).get("verdict") or "",
             (ev.get("verifier") or {}).get("outcome") or "", (ev.get("sandbox") or {}).get("status") or "",
             (ev.get("reasoning") or {}).get("first_deviation") or "")])
-    return ("﻿" + buf.getvalue()).encode("utf-8")           # BOM: Excel opens non-ASCII characters correctly
+    return ("\ufeff" + buf.getvalue()).encode("utf-8")           # BOM: Excel opens non-ASCII characters correctly
 
 
 # ------------------------------------------------------------------ PDF
@@ -221,7 +221,6 @@ def report_html(run: dict, findings: list[dict], limits: dict | None = None, now
     judged = [a for a in run.get("attempts", []) if not a["is_replay"] and a["outcome"].startswith("judged:")]
     passed = sum(1 for a in judged if a["outcome"] == "judged:no_violation")
     stop = EXPLAIN.get(Reason(run["stop_reason"])) if run.get("stop_reason") in Reason._value2member_map_ else None
-    snap = run.get("snapshot") or {}
 
     def sev_badge(s):
         return f'<span class="sev sev-{e(s)}">{e(SEVERITY_LABEL.get(s, s))}</span>'

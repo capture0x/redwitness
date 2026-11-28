@@ -115,7 +115,7 @@ export default function Library() {
             <Button disabled={!!busy} onClick={() => importTpl({}, "all")}><Download className="h-4 w-4" />{busy === "all" ? "…" : "Import all"}</Button></div>}
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {tpl?.templates.map((t: any, i: number) => (
+          {tpl?.templates.map((t: any) => (
             <Card key={t.id} className="flex flex-col"><CardContent className="flex flex-1 flex-col p-5">
               <div className="flex items-start justify-between"><span className="font-mono text-lg font-semibold text-white">{t.code}</span><Badge tone={t.coverage === "limited" ? "amber" : "green"}>{t.coverage === "limited" ? "limited coverage" : "direct test"}</Badge></div>
               <div className="mt-1 text-[15px] font-semibold text-slate-100">{t.name_en}</div>

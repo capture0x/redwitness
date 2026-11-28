@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Hint, Input, Label, NativeSelect } from "@/components/ui/input";
 
-const snippet = (token: string, origin: string) => `# GitHub Actions step (store the token as a secret, never in the repo)
+const snippet = (_token: string, origin: string) => `# GitHub Actions step (store the token as a secret, never in the repo)
 - name: RedWitness scan
   env: { REDWITNESS_TOKEN: \${{ secrets.REDWITNESS_TOKEN }} }
   run: |

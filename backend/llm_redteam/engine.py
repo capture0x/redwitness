@@ -9,6 +9,7 @@ Adaptive extension (only when the run enables it AND the case's library entry al
   the target REFUSED -> ANALYZING -> GENERATING (Attacker LLM) -> VALIDATING -> ATTACKING -> (judge) -> refused again: next round
   | violation: CONFIRMING (normal replay) -> FOUND | no violation: CLEAN | rounds used: EXHAUSTED | bad Attacker output: ABORTED
 """
+import logging
 import hashlib
 import json
 import secrets
@@ -32,6 +33,8 @@ from .reasons import Reason
 from .risk import SEVERITIES, severity_for
 from .scope import Endpoint
 from .targets import TargetAdapter, TargetError
+
+log = logging.getLogger("redwitness")
 
 
 @dataclass
@@ -351,6 +354,7 @@ class Executor:
         try:
             res = await sandbox_mod.verify(self.sandbox, case.category, str(reply))
         except Exception as e:  # noqa: BLE001
+            log.warning("sandbox verification failed (run %s, case %s)", self.run_id, case.id, exc_info=True)
             res = {"status": "unavailable", "note": f"sandbox verification failed: {type(e).__name__}", "checks": [], "isolation": sandbox_mod.ISOLATION}
         self.store.audit("sandbox", run_id=self.run_id, detail={"case": case.id, "status": res["status"], "checks": [{"kind": c["kind"], "exploitable": c["exploitable"]} for c in res["checks"]]})
         return res
@@ -371,6 +375,7 @@ class Executor:
                                           response=str(reply), tool_calls=first.tool_calls, judge=first.evaluation.to_dict(), impact=ev.get("impact"),
                                           min_confidence=self.verifier.min_confidence)
         except Exception as e:  # noqa: BLE001 - a verifier failure must never lose a finding: it stays verified, with a note
+            log.warning("verifier call failed (run %s)", self.run_id, exc_info=True)
             return verifier_mod.Verification(outcome="invalid", note=f"verifier call failed: {type(e).__name__}")
         v.note = v.note or ""
         self.gov.charge_judge(v.tokens)
@@ -637,7 +642,7 @@ class Executor:
                 calls = [{**c, "id": c.get("id") or f"call_{rounds}_{i}"} for i, c in enumerate(reply.tool_calls)]
                 results = [toolbox.fake_result(tools_by.get(c["name"]), tool_token) for c in calls]
                 tool_log += [{"name": c["name"], "arguments": c["arguments"]} for c in calls]
-                results_acc += [(c["name"], r) for c, r in zip(calls, results)]
+                results_acc += [(c["name"], r) for c, r in zip(calls, results, strict=False)]
                 messages.append({"role": "assistant", "content": (str(reply.text) + "\n" if str(reply.text) else "") + "\n".join(f"[tool call] {c['name']} {toolbox._args_text(c['arguments'])[:500]}" for c in calls)})
                 messages.append({"role": "tool", "content": "\n".join(f"[tool result] {r[:500]}" for r in results)})
                 wire.append(toolbox.assistant_wire(self.ep.provider, str(reply.text), calls))

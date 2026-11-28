@@ -439,6 +439,7 @@ Template: [`.env.example`](.env.example). In Docker **all** variables in `.env` 
 | `REDWITNESS_API` | no | *UI build argument*: the `/api` proxy address (Docker: `http://backend:8000`; local: `http://127.0.0.1:8000`) |
 | `REDWITNESS_TEST_DSN` | no | Admin DSN for the tests; if not given a temporary PostgreSQL cluster is started |
 | `ANTHROPIC_API_KEY` etc. | for the judge | Judge/target API keys. **Never written to the database**; only the variable **name** is given in the scope (`api_key_env`) and in Settings |
+| `REDWITNESS_LOG_LEVEL` | no | Application log level: `DEBUG`, `INFO` (default), `WARNING` or `ERROR`. Errors are logged with stack traces to `docker compose logs backend`; keys, credentials and target replies are never logged |
 | `REDWITNESS_INSECURE_NO_AUTH` | no | **Local development only:** turns authentication off (everyone is admin). Never in production |
 
 ### Roles (RBAC)

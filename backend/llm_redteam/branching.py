@@ -102,7 +102,7 @@ def parse_steps(raw) -> tuple[BStep, ...]:
         if i == 0 and "{previous_reply}" in msg:
             raise BranchError("the first step cannot use {previous_reply} (there is no previous reply yet)")
 
-        def target(t, what):
+        def target(t, what, i=i, s=s):   # bind the current step explicitly
             if t in (END, NEXT):
                 return t
             if t not in ids or ids.index(t) <= i:

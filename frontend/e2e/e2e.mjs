@@ -165,7 +165,7 @@ async function runMock() {
   check("PDF report was generated (valid PDF, > 8 KB)", pdf.status() === 200 && pdfBuf.subarray(0, 5).toString() === "%PDF-" && pdfBuf.length > 8000, `${pdfBuf.length} bytes`);
   let pdfText = ""; try { pdfText = execFileSync("pdftotext", [`${OUT}/report.pdf`, "-"], { encoding: "utf8" }); } catch { /* poppler missing */ }
   if (pdfText) check("PDF content: risk score, finding ids and library name are present", /Risk score/.test(pdfText) && pdfText.includes("tool-001") && pdfText.includes("sys-001") && pdfText.includes("E2E QA Suite"));
-  const csv = await page.request.get(`${BASE}/api/runs/${run1}/findings.csv`); const rows = (await csv.text()).replace(/^﻿/, "").trim().split("\r\n");
+  const csv = await page.request.get(`${BASE}/api/runs/${run1}/findings.csv`); const rows = (await csv.text()).replace(/^\ufeff/, "").trim().split("\r\n");
   check("CSV report: header + 7 finding rows", csv.status() === 200 && rows.length === 8, String(rows.length));
   // --- client-ready pentest report through the UI dialog (PDF) and the API (DOCX)
   await page.goto(`${BASE}/runs/${run1}`, { waitUntil: "networkidle" });
@@ -357,6 +357,11 @@ async function runOwaspSection() {
   const cplan = await page.getByTestId("qs-plan").innerText();
   check("the custom HTTP plan names the target and skips the fake-tool case with the reason", cplan.includes(`${MOCK}/custom/chat`) && /skipped/.test(cplan));
   check("preview and review sent nothing to the target", (await (await fetch(`${MOCK}/stats`)).json()).requests === callsBefore);
+  // --- security headers on every page
+  const hdr = (await page.request.get(BASE + "/mcp")).headers();
+  check("pages send security headers (CSP with frame-ancestors 'none', X-Frame-Options, Referrer-Policy, no X-Powered-By)",
+    /frame-ancestors 'none'/.test(hdr["content-security-policy"] || "") && /connect-src 'self'(;|$)/.test(hdr["content-security-policy"] || "")
+    && hdr["x-frame-options"] === "DENY" && hdr["referrer-policy"] === "no-referrer" && !hdr["x-powered-by"], JSON.stringify(hdr).slice(0, 300));
   // --- MCP Servers page (the read-only audit itself runs in the module E2E)
   check("the sidebar has the MCP Servers page", (await page.locator("nav a[href='/mcp']").count()) === 1);
   await page.goto(BASE + "/mcp"); await sleep(1200); await shot("31c-mcp-page");

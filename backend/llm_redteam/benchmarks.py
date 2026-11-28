@@ -31,7 +31,7 @@ SKIPPED_KINDS = {"copyright", "multimodal"}              # HarmBench functional 
 
 
 def _rows(text: str) -> list[dict]:
-    text = text.lstrip("﻿")
+    text = text.lstrip("\ufeff")
     s = text.lstrip()
     try:
         if s.startswith("[") or s.startswith("{"):

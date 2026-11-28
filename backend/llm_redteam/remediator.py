@@ -7,11 +7,14 @@ It is advisory only. Nothing is applied anywhere; the operator copies the sugges
   * Output is validated in code (shape, sizes). Secret values the target leaked (the judge's evidence quotes) are masked in every output field, so the
     suggestion can be shared without spreading the leak.
 """
+import logging
 import hashlib
 import json
 import re
 import secrets
 from dataclasses import dataclass
+
+log = logging.getLogger("redwitness")
 
 MAX_CONTEXT_CHARS = 6000
 MAX_FIELD_CHARS = 12_000
@@ -135,6 +138,7 @@ class Remediator:
             try:
                 text, tokens = await self.llm.complete(SYSTEM_PROMPT, user + (RETRY_HINT.format(why=why) if attempt else ""), 2500)
             except Exception as e:  # noqa: BLE001
+                log.warning("remediator model call failed", exc_info=True)
                 raise RemediatorError("LLM_ERROR:" + type(e).__name__, spent) from None
             spent += tokens
             rem, why = validate(_parse(text), kind, hide)

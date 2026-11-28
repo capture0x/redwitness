@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies (runtime + test)
         working-directory: backend
         run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        working-directory: backend
+        run: ruff check .
       - name: "Tests (hermetic, sockets open to loopback only)"
         working-directory: backend
         run: python -m pytest tests -q -p no:cacheprovider

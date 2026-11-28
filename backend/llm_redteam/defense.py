@@ -31,7 +31,7 @@ def run_states(findings: list[dict], attempts: list[dict]) -> dict[str, dict]:
         if str(a["outcome"]).startswith("judged:"):
             d["judged"] += 1
             d["clean"] += a["outcome"] == "judged:no_violation"
-    for cid, d in out.items():
+    for d in out.values():
         if d["judged"] and d["clean"] == d["judged"]:
             d["state"] = "clean"
         elif d["judged"]:

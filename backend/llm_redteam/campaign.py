@@ -33,7 +33,7 @@ class Rung:
 
 
 def new_state(levels: list[int]) -> dict:
-    return {"level": min(levels), "levels": sorted(levels), "tried": [], "retreats": {}, "by_level": {str(l): {"clean": 0, "refused": 0, "violation": 0, "unverified": 0, "error": 0} for l in sorted(levels)},
+    return {"level": min(levels), "levels": sorted(levels), "tried": [], "retreats": {}, "by_level": {str(lv): {"clean": 0, "refused": 0, "violation": 0, "unverified": 0, "error": 0} for lv in sorted(levels)},
             "refusal_turns": [], "sessions": [], "finished": None}
 
 
@@ -79,7 +79,6 @@ def record(state: dict, *, seq: int, run_id: str, case_id: str, level: int, outc
     """Adds one finished session to the state (counters only)."""
     if outcome not in OUTCOMES:
         raise CampaignError(f"unknown outcome {outcome!r}")
-    prev = state["level"]
     state["tried"].append(case_id)
     state["by_level"][str(level)][outcome] += 1
     if outcome == "refused" and refusal_turn is not None:

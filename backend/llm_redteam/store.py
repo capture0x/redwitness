@@ -731,7 +731,7 @@ class Store:
         res = json.loads(r["result_json"]) if r["result_json"] else None
         d = {"id": r["id"], "kind": r["kind"], "scope_id": r["scope_id"], "endpoint_url": r["endpoint_url"], "status": r["status"], "created_by": r["created_by"],
              "created_at": r["created_at"], "finished_at": r["finished_at"], "params": json.loads(r["params_json"]),
-             "risk": (res or {}).get("risk", {}).get("level")}
+             "risk": ((res or {}).get("risk") or {}).get("level")}           # a failed or interrupted analysis stores risk = None
         if full:
             d["result"] = res
         return d
@@ -977,6 +977,12 @@ class Store:
                            "verdict": (ev or {}).get("verdict"), "confidence": (ev or {}).get("confidence"),
                            "owasp": r["owasp_category"]})
         return {"live": live, "runs": len(running) if live else 0, "events": events}
+
+    def orphan_analyses_stopped(self) -> int:
+        """Closes analyses (extraction, membership, vector) left in 'running' when the server restarted; their task is gone."""
+        with self.conn() as c:
+            return c.execute("UPDATE analyses SET status='halted', finished_at=%s, result_json=%s WHERE status='running'",
+                             (time.time(), json.dumps({"stopped_reason": "SERVER_RESTART", "risk": None}))).rowcount
 
     def orphan_runs_stopped(self) -> int:
         """Closes orphaned runs left in 'running' when the server restarted."""

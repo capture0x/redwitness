@@ -1,0 +1,16 @@
+# Lint rules checked in CI: real-bug classes only (pyflakes, pycodestyle errors, bugbear), not formatting taste.
+target-version = "py312"
+line-length = 200
+extend-exclude = [".venv"]
+
+[lint]
+select = ["E", "F", "W", "B"]
+ignore = [
+  "E501",   # long lines are allowed: tables of rules and messages read better on one line
+  "E731",   # small lambdas assigned to names are used on purpose in tests
+]
+
+[lint.per-file-ignores]
+# Tests: fixtures are imported and then used as parameters (F401/F811), some set up sys.path before importing (E402),
+# and a few one-line setups use ';' (E702). assert False / pytest.raises(Exception) are deliberate (B011/B017).
+"tests/*" = ["F401", "F811", "E402", "E702", "B011", "B017"]

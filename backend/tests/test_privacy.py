@@ -335,3 +335,23 @@ def test_weaviate_exposed_and_limit_param(pw):
     r = _direct("weaviate", pw.vurl, pw.vec)
     assert r["readable"] and r["collections"][0]["embedding_dims"] == 4
     assert any(c["path"] == "/v1/objects?limit=3" for c in pw.vec.calls)
+
+
+def test_analyses_left_running_are_closed_on_restart(fresh_db):
+    """A server restart loses the analysis task; the record must not stay 'running' forever."""
+    from llm_redteam.store import Store
+    s = Store(fresh_db)
+    aid = s.create_analysis("vector", "scope-x", "http://127.0.0.1:1/", "admin", {})
+    assert s.get_analysis(aid)["status"] == "running"
+    create_app(fresh_db, RING, auth=Auth(insecure=True))                      # startup = what a restart does
+    a = s.get_analysis(aid)
+    assert a["status"] == "halted" and a["result"]["stopped_reason"] == "SERVER_RESTART" and a["finished_at"]
+
+
+def test_a_failed_analysis_does_not_break_the_list(fresh_db):
+    """finish_analysis(..., 'failed', {'risk': None}) is what the API stores on a crash; listing and reading it must still work."""
+    s = Store(fresh_db)
+    create_app(fresh_db, RING, auth=Auth(insecure=True))
+    aid = s.create_analysis("extraction", "scope-x", "http://127.0.0.1:1/", "admin", {})
+    s.finish_analysis(aid, "failed", {"error": "KeyError", "risk": None})
+    assert s.get_analysis(aid)["risk"] is None and [a["status"] for a in s.list_analyses()] == ["failed"]

@@ -52,7 +52,7 @@ Folders: `backend/` (FastAPI, engine, tests), `frontend/` (Next.js), `runner/` (
 ## Tests
 
 ```bash
-cd backend && pip install -r requirements-dev.txt && python -m pytest tests -q
+cd backend && pip install -r requirements-dev.txt && ruff check . && python -m pytest tests -q
 cd frontend && npm ci && npm run typecheck && npm run build
 sandbox/run_e2e.sh mock                         # strict browser checks inside an isolated network namespace
 ```

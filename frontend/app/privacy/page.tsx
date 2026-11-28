@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Label, NativeSelect, Textarea, Hint } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton, Meter } from "@/components/ui/misc";
+import { Skeleton } from "@/components/ui/misc";
 import { api, fmtDate, fmtNum, usePoll } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { useQueryClient } from "@tanstack/react-query";

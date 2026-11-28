@@ -302,7 +302,7 @@ def to_docx(m: dict) -> bytes:
         t.style, t.autofit = "Table Grid", False
         for i, row in enumerate(([header] if header else []) + rows):
             cells = t.add_row().cells
-            for j, (c, v) in enumerate(zip(cells, row)):
+            for j, (c, v) in enumerate(zip(cells, row, strict=False)):
                 c.text, c.width = str(v), Cm(widths[j])
                 if (header and i == 0) or (n == 2 and not header and j == 0):
                     for r in c.paragraphs[0].runs:

@@ -195,7 +195,6 @@ def test_verifier_cannot_invent_a_refutation_or_fail_a_run(env, run):           
     env.target.behavior = lambda n, b, h: (200, {}, openai_json(LEAKING))
     for llm in (FakeVerifierLLM({"refuted": True, "argument": "no_rule_broken", "reason": "fine", "quote": "text that is not there at all", "confidence": 0.99}),
                 FakeVerifierLLM(boom=True), FakeVerifierLLM()):
-        env.store.conn  # same db, fresh run each loop
         ex = env.build(lib(case("c1")))
         run(with_verifier(ex, llm).run())
         f = env.result()["findings"][0]

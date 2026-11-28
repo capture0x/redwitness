@@ -25,7 +25,7 @@ export default function Login() {
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-70" />
       <motion.form onSubmit={submit} initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.5 }} className="glass relative w-full max-w-sm rounded-3xl p-8">
         <div className="mb-6 flex flex-col items-center text-center">
-          <BrandMark size={56} className="mb-4 animate-float rounded-2xl shadow-glow" />
+          <BrandMark size={64} className="mb-4 animate-float" />
           <h1 className="text-gradient text-2xl font-semibold">RedWitness</h1>
           <p className="mt-1 text-sm text-slate-400">AI Orchestration &amp; Test Platform</p>
         </div>

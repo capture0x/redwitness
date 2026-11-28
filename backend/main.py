@@ -4,11 +4,11 @@ Bind to localhost only. API keys are NEVER written to the database/logs.
 """
 import asyncio
 import hashlib
+import logging
 import json
 from types import SimpleNamespace
 import re
 import os
-import secrets
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -35,8 +35,8 @@ from llm_redteam import sandbox_verifier as sandbox_mod
 from llm_redteam import multimodal as multimodal_mod
 from llm_redteam import frameworks
 from llm_redteam.library import CASE_TYPES, EXAMPLE_LIBRARY, LibraryError, SelectionError, check_against_scope, parse_library, select_cases
-from llm_redteam import docextract, docrender, modelscan, privacy, targetcfg
-from llm_redteam.vectorprobe import ProbeRefused, VectorProbe
+from llm_redteam import docextract, modelscan, privacy, targetcfg
+from llm_redteam.vectorprobe import VectorProbe
 from llm_redteam import owasp as owasp_mod
 from llm_redteam import reports, starter
 from llm_redteam.reasons import CATEGORY, CATEGORY_LABEL, EXPLAIN, Reason
@@ -45,7 +45,7 @@ from llm_redteam.scope import ALL_PROVIDERS, ANALYSIS_CLASSES, ATTACK_CLASSES, C
 from llm_redteam import mcpscan
 from llm_redteam import bias as bias_mod
 from llm_redteam import calibration as calibration_mod
-from llm_redteam.signing import Keyring, SigningError
+from llm_redteam.signing import Keyring
 from llm_redteam.store import ScopeGateError, Store
 from llm_redteam.targets import Credential, TargetAdapter
 
@@ -366,12 +366,27 @@ class OwnPasswordIn(BaseModel):
     new: str
 
 
+log = logging.getLogger("redwitness")
+
+
+def _configure_logging() -> None:
+    """Application log to stderr (docker compose logs). Holds errors with stack traces; never API keys, credentials or target replies."""
+    level = os.environ.get("REDWITNESS_LOG_LEVEL", "INFO").upper()
+    if not log.handlers:
+        h = logging.StreamHandler()
+        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        log.addHandler(h)
+        log.propagate = False
+    log.setLevel(level if level in ("DEBUG", "INFO", "WARNING", "ERROR") else "INFO")
+
+
 def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_factory=None,
                adapter_factory=None, auth: Auth | None = None, attacker_factory=None, remediator_factory=None, vector_factory=None, verifier_factory=None, sandbox_factory=None,
                mcp_factory=None) -> FastAPI:
     dsn = dsn or os.environ.get("REDWITNESS_DATABASE_URL")
     if not dsn:
         raise RuntimeError("REDWITNESS_DATABASE_URL is required (postgresql://user:password@host/database)")
+    _configure_logging()
     store = Store(dsn)
     ring = keyring if keyring is not None else Keyring.from_env()
     auth = auth if auth is not None else Auth.from_env()
@@ -389,6 +404,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     if store.count_users() == 0 and auth.bootstrap_password:               # a single 'admin' user on first start
         store.create_user("admin", "admin", hash_password(auth.bootstrap_password), actor="bootstrap")
     store.orphan_runs_stopped()
+    store.orphan_analyses_stopped()
     live: dict[str, tuple[asyncio.Task, Executor, Governor]] = {}
     live_analyses: dict[str, tuple[asyncio.Task, Governor]] = {}
     target_keys: dict[str, str] = {}                                    # saved-target API keys: memory only (lost on restart), never stored or returned
@@ -800,6 +816,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             try:
                 await ex.run()
             except Exception as e:  # noqa: BLE001
+                log.exception("run %s failed", run_id)
                 store.audit("run.error", run_id=run_id, detail={"error": type(e).__name__})
                 store.finish_run(run_id, "failed", type(e).__name__, gov.snapshot())
             finally:
@@ -887,7 +904,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
 
     @app.post("/api/kill")
     def kill_all(request: Request):
-        for _, ex, gov in list(live.values()):
+        for _task, _ex, gov in list(live.values()):
             gov.kill()
         for _, gov in list(live_analyses.values()):
             gov.kill()
@@ -1459,7 +1476,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     def document_to_case(body: DocToCaseIn, request: Request):
         """A PDF, DOCX or EML file becomes a library with ONE indirect-injection case. Only the file's visible text is used (extracted, checked, re-rendered by
         docrender); the original file is never forwarded to a target."""
-        import base64, binascii
+        import base64
+        import binascii
         if body.delivery not in ("inline", "ingest"):
             bad(422, "delivery must be inline or ingest.")
         if wait := limiter.hit(f"doc2case:{request.state.user}", 10, 60):
@@ -1499,7 +1517,9 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     @app.post("/api/model-scans", status_code=201)
     def model_scan_create(body: ModelScanIn, request: Request):
         """Static analysis of an uploaded model file. The file is parsed, never loaded or executed, and is not stored (only its hash and the findings)."""
-        import base64, binascii, re as _re
+        import base64
+        import binascii
+        import re as _re
         if body.expected_sha256 and not _re.fullmatch(r"[0-9a-fA-F]{64}", body.expected_sha256):
             bad(422, "expected_sha256 must be 64 hex characters.")
         if wait := limiter.hit(f"modelscan:{request.state.user}", 10, 60):
@@ -1583,6 +1603,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
                 halted = result.get("stopped_reason")
                 store.finish_analysis(aid, "halted" if halted else "completed", result)
             except Exception as e:  # noqa: BLE001
+                log.exception("analysis %s (%s) failed", aid, body.kind)
                 store.finish_analysis(aid, "failed", {"error": type(e).__name__, "risk": None})
             finally:
                 for c in (adapter, probe):
@@ -1684,6 +1705,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
                 stop = result.get("stopped_reason")
                 store.finish_run(rid, "halted" if stop else "completed", stop, snap)
             except Exception as e:  # noqa: BLE001
+                log.exception("MCP audit %s failed", rid)
                 store.finish_run(rid, "failed", type(e).__name__, {"error": type(e).__name__})
             finally:
                 if client is not None:

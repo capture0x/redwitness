@@ -15,7 +15,7 @@ const RULES: [RegExp, string][] = [
   [/Not an endpoint of this signed scope/i, "That address is not part of the signed scope. Pick one of the scope's endpoints, or create a new scope that includes it."],
 ];
 
-export function friendlyError(status: number, reason: string | null, message: string): string {
+export function friendlyError(status: number, _reason: string | null, message: string): string {
   for (const [re, text] of RULES) if (re.test(message)) return text;
   if (status === 403) return "You do not have permission for this action. Ask an admin to change your role on the Users page.";
   if (status === 429) return "Too many requests in a short time. Wait a moment and try again.";
