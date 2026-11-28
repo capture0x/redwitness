@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 import httpcore
 import httpx
 
-from . import customhttp
+from . import customhttp, wstarget
 from .evaluator import Untrusted, clean_untrusted
 from .netcheck import PinError, default_resolver, pin_address
 from .scope import Endpoint
@@ -58,18 +58,40 @@ class TargetError(Exception):
 
 
 @dataclass(frozen=True)
-class Credential:
-    """How to authenticate to a target when it is not a plain API key: a browser cookie string or a custom header. The value is a secret: it is held in memory only
-    and never appears in a repr, a log, the database or a response."""
-    kind: str                  # cookie | header
-    value: str
-    header: str = "Authorization"
+class OAuth:
+    """OAuth 2.0 client for the target's token endpoint (the token_url is in the signed scope). Secrets: memory only, never shown or stored."""
+    grant: str                 # client_credentials | refresh_token
+    client_id: str
+    client_secret: str = ""
+    refresh_token: str = ""
+    scope: str = ""
 
     def __repr__(self) -> str:
-        return f"Credential({self.kind}, ***)"
+        return f"OAuth({self.grant}, ***)"
+
+
+@dataclass(frozen=True)
+class Credential:
+    """How to authenticate to a target. Every value is a secret: held in memory only, never in a repr, a log, the database or a response.
+      bearer  the provider's own API-key header (Authorization: Bearer / x-api-key)
+      cookie  a browser session cookie string
+      header  a custom header (name + value)
+      oauth   an OAuth 2.0 access token obtained (and refreshed) from the signed token_url
+      none    no credential, only extra headers
+    extra: further headers the app needs on every request (CSRF token, tenant id ...)."""
+    kind: str
+    value: str = ""
+    header: str = "Authorization"
+    extra: tuple = ()          # ((name, value), ...)
+    oauth: OAuth | None = None
+
+    def __repr__(self) -> str:
+        return f"Credential({self.kind}, ***, extra={len(self.extra)})"
 
     def headers(self) -> dict:
-        return {"cookie": self.value} if self.kind == "cookie" else {self.header.lower(): self.value}
+        h = {"cookie": self.value} if self.kind == "cookie" else {self.header.lower(): self.value} if self.kind == "header" else {}
+        h.update({n.lower(): v for n, v in self.extra})
+        return h
 
 
 @dataclass
@@ -91,8 +113,12 @@ class TargetAdapter:
                  max_bytes: int = 1_000_000, max_stream_seconds: float = 120.0, rng: random.Random | None = None,
                  pin_resolver=default_resolver, on_pin=None, logprobs: bool = False):
         self._cred = api_key if isinstance(api_key, Credential) else None
-        self.custom = endpoint.provider == "http_json"
-        self.ep, self._key, self.stream = endpoint, (None if self._cred else api_key), stream and not self.custom   # custom HTTP: no streaming
+        self.custom = endpoint.provider in ("http_json", "ws_json")
+        key = (self._cred.value if self._cred.kind == "bearer" else None) if self._cred else api_key
+        self.ep, self._key, self.stream = endpoint, key, stream and not self.custom   # custom HTTP / WebSocket: no streaming
+        self._token: str | None = None                          # OAuth access token (memory only)
+        self._token_until = 0.0
+        self._ws = wstarget.WsConversations(endpoint.url, endpoint.local, resolver=pin_resolver, timeout=timeout) if endpoint.provider == "ws_json" else None
         self.logprobs = logprobs and endpoint.provider == "openai_compat" and not stream
         self._sessions: dict[str, str] = {}                     # conversation -> random session id sent to a custom HTTP target
         # The default client pins to the IP (DNS-rebinding protection). If `http` is passed in from outside (tests) there is no pinning.
@@ -108,8 +134,51 @@ class TargetAdapter:
         return f"TargetAdapter({self.ep.provider}, {self.ep.url}, key={'set' if (self._key or self._cred) else 'none'})"
 
     async def aclose(self):
+        if self._ws is not None:
+            await self._ws.aclose()
         if self._own_http:
             await self._http.aclose()
+
+    # ------------------------------------------------------------ OAuth 2.0 (token endpoint from the signed scope)
+    @property
+    def _oauth(self) -> OAuth | None:
+        return self._cred.oauth if self._cred and self._cred.kind == "oauth" else None
+
+    async def _ensure_token(self, force: bool = False) -> None:
+        o = self._oauth
+        if o is None:
+            return
+        loop = asyncio.get_running_loop()
+        if self._token and not force and loop.time() < self._token_until:
+            return
+        if not self.ep.token_url:
+            raise TargetError("auth", "OAuth needs the token_url in the signed scope")
+        form = {"grant_type": o.grant, "client_id": o.client_id}
+        if o.client_secret:
+            form["client_secret"] = o.client_secret
+        if o.grant == "refresh_token":
+            form["refresh_token"] = getattr(self, "_rotated_refresh", None) or o.refresh_token
+        if o.scope:
+            form["scope"] = o.scope
+        try:
+            r = await self._http.post(self.ep.token_url, data=form, headers={"accept": "application/json"}, timeout=self.timeout)
+        except PinError as e:
+            raise TargetError("blocked", e.reason.value) from None
+        except httpx.HTTPError as e:
+            raise TargetError("network", f"token endpoint: {type(e).__name__}") from None
+        if r.status_code >= 300:
+            raise TargetError("auth", f"the token endpoint answered HTTP {r.status_code}", r.status_code)
+        try:
+            d = r.json()
+            tok = d["access_token"]
+            assert isinstance(tok, str) and tok and len(tok) < 8000 and not any(ord(c) < 32 for c in tok)
+        except (ValueError, KeyError, TypeError, AssertionError):
+            raise TargetError("auth", "the token endpoint returned no usable access_token") from None
+        self._token = tok
+        exp = d.get("expires_in")
+        self._token_until = loop.time() + (max(30.0, float(exp) - 30.0) if isinstance(exp, (int, float)) else 300.0)
+        if isinstance(d.get("refresh_token"), str) and d["refresh_token"]:
+            self._rotated_refresh = d["refresh_token"]                   # rotating refresh tokens: use the newest one next time
 
     # ------------------------------------------------------------ building requests
     def _headers(self) -> dict:
@@ -118,8 +187,12 @@ class TargetAdapter:
             h["accept"] = "application/json, text/plain;q=0.5"
         if self.ep.provider == "anthropic":
             h["anthropic-version"] = ANTHROPIC_VERSION
-        if self._cred:                                          # cookie / custom header
+        if self._cred:                                          # cookie / custom header / extra headers
             h.update(self._cred.headers())
+        if self._oauth and self._token:
+            h["authorization"] = f"Bearer {self._token}"
+        elif self._cred and self._cred.kind != "bearer":
+            pass
         elif self.ep.provider == "anthropic":
             if self._key:
                 h["x-api-key"] = self._key
@@ -156,9 +229,29 @@ class TargetAdapter:
     async def send(self, messages: list[dict], max_tokens: int, tools: list[dict] | None = None, session: str | None = None) -> Reply:
         """session: the conversation this turn belongs to (custom HTTP targets get one stable {{session_id}} per conversation)."""
         if tools and self.custom:
-            raise TargetError("client", "a custom HTTP target has no tool-calling format")
-        reply = await self._retry(lambda: self._once(messages, max_tokens, tools, session))
-        return reply
+            raise TargetError("client", "a custom HTTP or WebSocket target has no tool-calling format")
+        await self._ensure_token()
+        op = (lambda: self._once_ws(messages, session)) if self._ws is not None else (lambda: self._once(messages, max_tokens, tools, session))
+        try:
+            return await self._retry(op)
+        except TargetError as e:
+            if e.kind != "auth" or self._oauth is None:
+                raise
+            await self._ensure_token(force=True)                          # expired or revoked token: get a new one once, then try again
+            return await self._retry(op)
+
+    async def _once_ws(self, messages: list[dict], session: str | None) -> Reply:
+        body = customhttp.render(self.ep.request_template, messages, self._session(session))
+        self._est_in = len(json.dumps(body, ensure_ascii=False)) // 4 + 1
+        try:
+            hdrs = {k: v for k, v in self._headers().items() if k not in ("content-type", "accept")}   # the JSON goes in a WebSocket frame, not a body
+            text = await self._ws.exchange(session or self._session(None), body, hdrs,
+                                           self.ep.response_path, self.ep.done_path)
+        except wstarget.WsError as e:
+            raise TargetError(e.kind, e.message) from None
+        r = self._reply(text, [], self._est_in, None, "")
+        r.estimated = True
+        return r
 
     async def ingest(self, name: str, content: str, *, data: bytes | None = None, content_type: str | None = None) -> None:
         """Sends a document to the target's document/knowledge-base upload endpoint (indirect tests). 2xx is expected.
@@ -166,6 +259,7 @@ class TargetAdapter:
         {"name","content_type","content_base64"}."""
         if not self.ep.ingest_url:
             raise TargetError("client", "no ingest_url")
+        await self._ensure_token()
         await self._retry(lambda: self._once_ingest(name, content, data, content_type))
 
     async def delete_ingested(self, name: str) -> None:

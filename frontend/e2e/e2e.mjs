@@ -183,6 +183,20 @@ async function runMock() {
   const docx = await page.request.post(`${BASE}/api/client-report`, { headers: { "content-type": "application/json", "x-redwitness-csrf": "1" }, data: JSON.stringify({ run_ids: [run1], format: "docx" }) });
   const docxBuf = await docx.body();
   check("client report: the DOCX export is a Word document", docx.status() === 200 && docxBuf.subarray(0, 2).toString() === "PK" && docxBuf.length > 5000, `${docx.status()} ${docxBuf.length}`);
+  // --- retest one finding from its card, then compare two runs on the run page
+  const vf = r1.findings.find((x) => x.status === "verified");
+  await page.goto(`${BASE}/runs/${run1}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: vf.title }).first().click(); await sleep(600);
+  await page.getByTestId("tab-retest").first().click(); await sleep(400);
+  await page.getByTestId("retest-start").first().click();
+  let outcome = "";
+  for (let i = 0; i < 120 && !/Fixed|Still vulnerable|Inconclusive/.test(outcome); i++) { await sleep(1000); outcome = (await page.getByTestId("retest-latest").first().innerText().catch(() => "")) || ""; }
+  await shot("15c-retest");
+  check("retest: the finding's Retest tab runs the case again and shows the outcome (still vulnerable)", /Still vulnerable/.test(outcome), outcome);
+  await page.goto(`${BASE}/runs/${run2}`, { waitUntil: "networkidle" });
+  await page.getByTestId("compare-base").selectOption(run1); await page.waitForSelector("[data-testid=compare-result]", { timeout: 15000 });
+  const cmpText = await page.getByTestId("compare-result").innerText();
+  check("compare: the run page compares two runs (fixed / new / still open / not retested)", /Fixed/.test(cmpText) && /Still open/.test(cmpText) && /Not retested/.test(cmpText), cmpText.slice(0, 120));
   await logout();
 
   // --- scope limit: a second scope with a small budget → planned/hard stop (API)

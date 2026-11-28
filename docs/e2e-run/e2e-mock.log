@@ -36,12 +36,26 @@ PASS  judge tokens were deducted from the budget
 PASS  run 2 (streaming/SSE) completed and the target answered with a stream  - completed
 PASS  run 2: only the selected category ran, the leaks were verified  - sys-001,multi-001
 PASS  the streamed response was joined and went to the judge as full text
-PASS  PDF report was generated (valid PDF, > 8 KB)  - 45731 bytes
+PASS  PDF report was generated (valid PDF, > 8 KB)  - 45735 bytes
 PASS  PDF content: risk score, finding ids and library name are present
 PASS  CSV report: header + 7 finding rows  - 8
-PASS  client report: the dialog downloads a valid PDF  - pentest-report-f1d8ff0d.pdf
+PASS  client report: the dialog downloads a valid PDF  - pentest-report-fa8a18c1.pdf
 PASS  client report: cover, finding ids, steps to reproduce and remediation are present
-PASS  client report: the DOCX export is a Word document  - 200 41599
+PASS  client report: the DOCX export is a Word document  - 200 41602
+PASS  retest: the finding's Retest tab runs the case again and shows the outcome (still vulnerable)  - Latest retest:
+Still vulnerable
+27 Nov 2026, 23:09
+PASS  compare: the run page compares two runs (fixed / new / still open / not retested)  - Fixed
+0
+
+verified in the earlier run, tested again here and not found
+
+New
+0
+
+verified here, not in the earlier run
+
+Sti
 PASS  scope limit: hard stop after 2 requests (REQUEST_LIMIT), the refusal was coded  - halted/REQUEST_LIMIT/2
 PASS  a finding that could not be verified because of the limit stayed 'candidate' (not counted as verified)  - candidate
 PASS  the viewer sees the 6 verified findings on the findings page
@@ -49,8 +63,8 @@ PASS  the viewer can download the PDF report
 PASS  the viewer cannot read the audit records (403)
 PASS  audit: unauthorized access (ACCESS_DENIED) and REQUEST_LIMIT are recorded with their codes  - ACCESS_DENIED,REQUEST_LIMIT
 PASS  the audit chain is intact
-PASS  dashboard: risk score critical, 8 verified findings, token usage > 0  - {"r":97,"v":8,"t":14062}
-fake target counters: {"requests":42,"judge_calls":43,"ingested":0,"ingested_total":3,"deleted":3,"flaky_done":true,"rl_done":true,"streamed":11,"latency_ms":0}
+PASS  dashboard: risk score critical, 8 verified findings, token usage > 0  - {"r":97,"v":8,"t":15435}
+fake target counters: {"tokens":{},"refresh":"rw-refresh-1","token_requests":0,"memory_codes":0,"requests":45,"judge_calls":47,"ingested":0,"ingested_total":3,"deleted":3,"flaky_done":true,"rl_done":true,"streamed":11,"latency_ms":0}
 PASS  judge advisory: local endpoint → 'warn' level and a reason  - ["the judge runs on a local endpoint"]
 PASS  Settings: the 'Judge model warning' + 'strongly recommended' text is shown
 PASS  OWASP scope was signed
@@ -79,7 +93,7 @@ PASS  compliance score 50% (5 clean / 10 tested), coverage 100%  - 50/100
 PASS  the endpoint filter works
 PASS  OWASP page: statuses, score and the disclaimer text are shown
 PASS  Dashboard: 'OWASP compliance' card (50%) and the OWASP scan button
-PASS  findings are filtered by OWASP category (LLM07) and the card carries the OWASP badge  - 7 kart
+PASS  findings are filtered by OWASP category (LLM07) and the card carries the OWASP badge  - 8 kart
 PASS  API filter: the legacy 2023 id is accepted too (LLM06_SensitiveInfoDisclosure → LLM02)
 PASS  PDF: the OWASP summary, the coverage counter and the not-a-certificate disclaimer are present
 PASS  CSV: the owasp_category column is filled
@@ -107,7 +121,7 @@ PASS  the benchmark import reports 2 imported cases and 1 unsupported row
 PASS  the imported benchmark is an ordinary hashed library
 PASS  an unknown benchmark kind is refused (422)
 PASS  an AISVS selection that matches no case is refused (422)
-PASS  a run limited to AISVS-mapped benchmark cases started  - {"id":"d7591c63-0680-450b-93a3-47b4a54ffd93","cases":2,"owasp_planned":["LLM01_PromptInjection"],"owasp_skipped":[]}
+PASS  a run limited to AISVS-mapped benchmark cases started  - {"id":"e9f5626a-1f70-421d-a281-6228e2f91972","cases":2,"owasp_planned":["LLM01_PromptInjection"],"owasp_skipped":[]}
 PASS  the run evaluated both benchmark cases  - completed
 PASS  the stats report an ASR for HarmBench and none for the benchmarks that were not run
 PASS  Compliance Suite: the ATLAS tab lists AML.T0054 as tested
@@ -139,14 +153,14 @@ PASS  Suite page: the campaign card shows the sessions and the defence profile
 PASS  Findings page: the chain finding has its badge
 PASS  PDF report of the knowledge-map run builds
 PASS  payload scope: the branching grant is part of the signed content, the plain scope has none
-PASS  import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning  - {"id":"d462ba27-5607-40e3-917b-55b9abac463f","name":"memory-poisoning_notes.txt","version":"import-1","sha256":"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47","cases":2,"report":{"r
+PASS  import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning  - {"id":"97dd7906-a04e-4674-b960-ef9a01f831a5","name":"memory-poisoning_notes.txt","version":"import-1","sha256":"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47","cases":2,"report":{"r
 PASS  the imported library ran
 PASS  the imported payload leaked and the finding carries family, ASI06, ATLAS AML.T0080.000 and the source note  - {"asi":"ASI06_MemoryContextPoisoning","atlas":[{"id":"AML.T0051.001","name":"LLM Prompt Injection: Indirect","tactics":[{"id":"AML.TA0005","name":"Execution"}]},{"id":"AML.T0080.000","name":"AI Agent Context Poisoning: Memory","tactics":[{"id":"AML.TA0006","name":"Persistence"}]}],"family":"memory_poisoning","nist":[{"id":"MEASURE 2.7","function":"Measure"}],"aisvs":["C7"]}
 PASS  CSV report has the attack_family and source columns
 PASS  PDF report builds with the attack-family threat matrix
-PASS  a branching library validates and is saved  - {"id":"1f9a1ae6-5f26-437d-9875-bb1d65c4255a","name":"Payload branching","version":"1","sha256":"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b
+PASS  a branching library validates and is saved  - {"id":"2836917a-b7ab-45e3-9a99-b81759f2ff8d","name":"Payload branching","version":"1","sha256":"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b
 PASS  branching: a scope without 'branching_allowed' refuses the run (422)  - {"detail":{"message":"br-001: this case branches on the target's replies, which needs 'branching_allowed' in the signed scope","reason":null}}
-PASS  branching: the run was accepted under the granted scope  - {"id":"6541ee41-ee3b-4791-b47e-7393efe7ffd5","cases":1,"owasp_planned":["LLM07_SystemPromptLeakage"],"owasp_skipped":[]}
+PASS  branching: the run was accepted under the granted scope  - {"id":"f8cfcdbe-9fe4-4177-b094-f77cb4278bf8","cases":1,"owasp_planned":["LLM07_SystemPromptLeakage"],"owasp_skipped":[]}
 PASS  branching: the code followed the rule (s1 → s3, s2 never sent) and the path is in the evidence  - {"turns":2,"steps_defined":3,"path":["s1","s3"],"trace":[{"turn":1,"step":"s1","via":"rule 1","goto":"s3","refused":true,"reply_chars":39},{"turn":2,"step":"s3","via":"default","goto":"end","refused":false,"reply_chars":135}]}
 PASS  branching: the finding is verified and the type is recorded
 PASS  UI: the finding card shows the branching badge and the path chips
@@ -156,4 +170,4 @@ PASS  UI: the Compliance 'Attack families' tab lists the 7 families with their A
 PASS  UI: the scope list shows the 'Multi-turn branching' grant badge
 PASS  no critical errors in the browser (console/page)
 
-RESULT [mock]: 149/149 checks passed
+RESULT [mock]: 151/151 checks passed

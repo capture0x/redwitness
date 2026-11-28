@@ -35,7 +35,7 @@ export default function NewTest() {
   const valid = (scopes || []).filter((s: any) => s.valid);
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
-  const [f, setF] = useState<any>({ scopeId: "", endpoint: "", apiKey: "", stream: false, libId: "", cats: [] as string[], replayN: 3, replayK: 2, reference: "", canaries: "", adaptive: false, compare: false, targets: [] as string[], keys: {} as Record<string, string>, bLabel: "", owaspMode: false, owasp: [] as string[], fwKind: "" as "" | "aisvs" | "asi" | "benchmark", fwIds: [] as string[] });
+  const [f, setF] = useState<any>({ scopeId: "", endpoint: "", apiKey: "", apiKeyB: "", stream: false, libId: "", cats: [] as string[], replayN: 3, replayK: 2, reference: "", canaries: "", adaptive: false, compare: false, targets: [] as string[], keys: {} as Record<string, string>, bLabel: "", owaspMode: false, owasp: [] as string[], fwKind: "" as "" | "aisvs" | "asi" | "benchmark", fwIds: [] as string[] });
   const [err, setErr] = useState<ApiError | string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -85,7 +85,7 @@ export default function NewTest() {
         canaries: f.canaries.split("\n").map((x: string) => x.trim()).filter(Boolean) };
       if (f.owaspMode) { const r = await api("/owasp/scan", { method: "POST", body: JSON.stringify({ ...common, categories: f.owasp }) }); router.push(`/runs/${r.id}`); return; }
       const r = await api("/runs", { method: "POST", body: JSON.stringify({ scope_id: f.scopeId, endpoint_url: f.endpoint, library_id: f.libId, categories: f.cats,
-        api_key: f.apiKey || null, stream: f.stream, reference: f.reference, canaries: f.canaries.split("\n").map((x: string) => x.trim()).filter(Boolean), replay_n: f.replayN, replay_k: f.replayK, adaptive: f.adaptive && !!scope?.adaptive_allowed,
+        api_key: f.apiKey || null, second_api_key: f.apiKeyB || null, stream: f.stream, reference: f.reference, canaries: f.canaries.split("\n").map((x: string) => x.trim()).filter(Boolean), replay_n: f.replayN, replay_k: f.replayK, adaptive: f.adaptive && !!scope?.adaptive_allowed,
         ...(f.fwKind && f.fwIds.length ? { [f.fwKind]: f.fwIds } : {}) }) });
       router.push(`/runs/${r.id}`);
     } catch (e: any) { setErr(e); setBusy(false); }
@@ -153,7 +153,9 @@ export default function NewTest() {
                 ) : (
                 <div className="md:col-span-2"><Label><KeyRound className="mr-1 inline h-3 w-3" />API key</Label>
                   <Input type="password" autoComplete="off" value={f.apiKey} onChange={(e) => set("apiKey", e.target.value)} placeholder="if left empty, the environment variable from the scope is used" />
-                  <Hint>The key is kept in memory only for the duration of this run; it is never written to the database, logs or reports.</Hint></div>)}
+                  <Hint>The key is kept in memory only for the duration of this run; it is never written to the database, logs or reports.</Hint>
+                  <div className="mt-3"><Label help="Only for cross-session cases (type cross_session): identity A shares a value, identity B (this credential, another user's account) asks for it. Without it, B is the same credential in a new session. Same kind as the credential above (key, cookie or header value); memory only.">Second identity <span className="text-slate-600">(optional, cross-session tests)</span></Label>
+                    <Input data-testid="second-identity" type="password" autoComplete="off" value={f.apiKeyB} onChange={(e) => set("apiKeyB", e.target.value)} placeholder="another test user's key, cookie or header value" /></div></div>)}
                 {!f.compare && <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4 md:col-span-2">
                   <div className="flex items-center gap-3"><Radio className="h-5 w-5 text-violet-300" /><div><div className="text-sm font-medium text-white">Streaming (SSE) response</div><div className="text-xs text-slate-500">The response is received from the target in chunks and joined.</div></div></div>
                   <Toggle data-testid="stream-toggle" checked={f.stream} onCheckedChange={(v) => set("stream", v)} />

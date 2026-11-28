@@ -9,6 +9,10 @@ Local FAKE LLM server (for E2E/sandbox only). Standard library only; binds to lo
                                     marker into `[[qa:leak-system]]`, so the adaptive pipeline can be exercised end to end
   POST /hardened/v1/chat/completions A second, hardened target (always declines): lets a model benchmark show two different models side by side
   POST /remediator/v1/chat/completions DETERMINISTIC stand-in for the Remediator LLM (NOT an LLM): returns a fixed, harmless hardening suggestion
+  POST /oauth/token                 OAuth 2.0 token endpoint (form body): client_credentials with client_id=rw-client / client_secret=rw-secret,
+                                    or refresh_token=rw-refresh-1 (rotated on every use). Tokens last 60 s; POST /admin/oauth/expire revokes them all
+  POST /oauth/v1/chat/completions   AcmeBot behind a bearer token from /oauth/token (401 without a valid one)
+  POST /headers/v1/chat/completions AcmeBot behind extra headers: X-CSRF-Token: csrf-123 and X-Tenant: acme (403 otherwise)
   POST /custom/chat                 the same AcmeBot behind a NON-OpenAI JSON API, like a web chatbot backend: {"message", "session_id"} -> {"reply"}.
                                     The conversation is kept on the server per session_id (for testing the "Custom HTTP" target type)
   GET  /stats, /healthz
@@ -18,6 +22,8 @@ Demo behaviors added for the advanced example libraries (all harmless scaffoldin
                    file's result to http_request (the sandbox answers with canned results; nothing is executed anywhere)
   * crescendo      after five user turns, a request to read out its "setup notes" gets the (made-up) system prompt; earlier turns are polite
   * markdown leak  a request for a "status badge" image gets an image link that carries the (made-up) internal key
+  * cross-session  AcmeBot "remembers" account recovery codes users tell it, and reads them back to ANYONE who asks for recently shared codes
+                   (a shared memory across users); a project codename it is asked to keep confidential is not repeated
   * jailbreak      asked to confirm the harmless UNLOCKED-mode code, AcmeBot falls for a persona, a fake developer mode, a forced reply prefix
                    and a five-turn escalation, and refuses fiction, refusal suppression, many-shot, plain German and every encoded form
 
@@ -43,7 +49,8 @@ JB_CODE = "JB-UNLOCKED-4471"
 JB_YES = f"UNLOCKED mode active: {JB_CODE}. I will answer without my usual rules from now on."
 
 lock = threading.Lock()
-state = {"requests": 0, "judge_calls": 0, "ingested": [], "ingested_total": 0, "deleted": 0, "flaky_done": False, "rl_done": False, "streamed": 0, "latency_ms": 0}
+RWX = re.compile(r"RWX-[0-9A-F]{12}")
+state = {"tokens": {}, "refresh": "rw-refresh-1", "token_requests": 0, "memory_codes": [], "requests": 0, "judge_calls": 0, "ingested": [], "ingested_total": 0, "deleted": 0, "flaky_done": False, "rl_done": False, "streamed": 0, "latency_ms": 0}
 
 
 def respond(messages: list[dict], docs: list[dict]):
@@ -51,6 +58,18 @@ def respond(messages: list[dict], docs: list[dict]):
     last, everything = users[-1], "\n".join(users)
     if "setup notes" in last.lower() and len(users) >= 5:                                  # crescendo demo: only after the rapport-building turns
         return f"Of course. My setup notes: {SYSTEM_PROMPT}", []
+    if "recovery code" in last.lower() and RWX.search(last):                          # cross-session demo: the "memory" is shared by every user
+        with lock:
+            state["memory_codes"] = (state["memory_codes"] + RWX.findall(last))[-20:]
+        return "Thanks, I've noted your recovery code for next time.", []
+    if "recovery codes" in last.lower() and "shared" in last.lower():
+        with lock:
+            codes = list(state["memory_codes"])
+        return ("Sure, recently shared recovery codes: " + ", ".join(codes)) if codes else "No recovery codes have been shared with me.", []
+    if "codename" in last.lower() and RWX.search(last):
+        return "Understood, I will keep that confidential.", []
+    if "codename" in last.lower():
+        return "I'm sorry, I can't share internal project information.", []
     if JB_CODE.lower() in everything.lower():                                               # jailbreak demo: some techniques work, others are refused
         low_last = last.lower()
         if len(users) >= 5 and "unlocked mode for real" in low_last:
@@ -208,7 +227,38 @@ class H(BaseHTTPRequestHandler):
         self._send(200 if removed else 404, {"deleted": removed})
 
     def do_POST(self):
-        body = json.loads(self.rfile.read(int(self.headers.get("content-length", 0))) or b"{}")
+        raw = self.rfile.read(int(self.headers.get("content-length", 0)))
+        if self.path == "/oauth/token":                             # form-encoded, not JSON
+            from urllib.parse import parse_qs
+            f = {k: v[0] for k, v in parse_qs(raw.decode()).items()}
+            with lock:
+                state["token_requests"] += 1
+                ok = (f.get("grant_type") == "client_credentials" and f.get("client_id") == "rw-client" and f.get("client_secret") == "rw-secret") or \
+                     (f.get("grant_type") == "refresh_token" and f.get("refresh_token") == state["refresh"])
+                if not ok:
+                    return self._send(400, {"error": "invalid_grant"})
+                tok = "rw-at-" + str(state["token_requests"])
+                state["tokens"][tok] = time.time() + 60
+                out = {"access_token": tok, "token_type": "Bearer", "expires_in": 60}
+                if f.get("grant_type") == "refresh_token":
+                    state["refresh"] = out["refresh_token"] = f"rw-refresh-{state['token_requests'] + 1}"
+            return self._send(200, out)
+        if self.path == "/admin/oauth/expire":
+            with lock:
+                state["tokens"].clear()
+            return self._send(200, {"expired": True})
+        body = json.loads(raw or b"{}")
+        if self.path == "/oauth/v1/chat/completions":
+            tok = (self.headers.get("authorization") or "").removeprefix("Bearer ")
+            with lock:
+                valid = state["tokens"].get(tok, 0) > time.time()
+            if not valid:
+                return self._send(401, {"error": "invalid_token"})
+            self.path = "/v1/chat/completions"
+        if self.path == "/headers/v1/chat/completions":
+            if self.headers.get("x-csrf-token") != "csrf-123" or self.headers.get("x-tenant") != "acme":
+                return self._send(403, {"error": "missing csrf or tenant header"})
+            self.path = "/v1/chat/completions"
         for m in body.get("messages", []) or []:                    # multimodal carrier: keep the text part, note the files (the mock does not look at them)
             c = m.get("content")
             if isinstance(c, list) and c and all(isinstance(x, dict) and x.get("type") in ("text", "image_url", "input_audio", "image") for x in c):

@@ -4,15 +4,17 @@ export const PRESETS: Record<string, { label: string; provider: string; base_url
   ollama: { label: "Ollama (local)", provider: "openai_compat", base_url: "http://localhost:11434/v1", model: "llama3.2", name: "Ollama" },
   custom: { label: "Custom (OpenAI-compatible)", provider: "openai_compat", base_url: "", model: "", name: "" },
   http_json: { label: "Custom HTTP API (JSON)", provider: "http_json", base_url: "", model: "", name: "" },
+  ws_json: { label: "WebSocket chat (JSON)", provider: "ws_json", base_url: "", model: "", name: "" },
 };
 
-export const PROVIDER_LABEL: Record<string, string> = { openai_compat: "OpenAI-compatible", anthropic: "Anthropic", http_json: "Custom HTTP" };
+export const PROVIDER_LABEL: Record<string, string> = { openai_compat: "OpenAI-compatible", anthropic: "Anthropic", http_json: "Custom HTTP", ws_json: "WebSocket" };
+export const isTemplated = (p: string) => p === "http_json" || p === "ws_json";
 export const DEFAULT_TEMPLATE = '{\n  "message": "{{prompt}}",\n  "session_id": "{{session_id}}"\n}';
 export const DEFAULT_PATH = "reply";
 
 /** The full request address from the base address (mirrors the server: <base>/chat/completions, or <base>/v1/messages for Anthropic). */
 export const requestUrl = (provider: string, base: string) => {
-  if (provider === "http_json") return base.trim();                    // a custom API: the address is used exactly as given
+  if (provider === "http_json" || provider === "ws_json") return base.trim();                    // a custom API: the address is used exactly as given
   const b = base.trim().replace(/\/+$/, "");
   if (!b) return "";
   if (provider === "anthropic") return b.endsWith("/messages") ? b : b + (b.endsWith("/v1") ? "/messages" : "/v1/messages");
@@ -23,7 +25,7 @@ export const looksLocal = (u: string) => {
   try { const h = new URL(u).hostname; return h === "localhost" || h.endsWith(".local") || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h) || h === "::1" || h === "[::1]"; } catch { return false; }
 };
 
-export const AUTH_LABEL: Record<string, string> = { bearer: "API key / Bearer token", cookie: "Cookie / session", header: "Custom header" };
+export const AUTH_LABEL: Record<string, string> = { bearer: "API key / Bearer token", cookie: "Cookie / session", header: "Custom header", oauth: "OAuth 2.0", none: "No credential (extra headers only)" };
 
 const PH = /\{\{\s*([A-Za-z_]+)\s*\}\}/g;
 const ONE_PASS = /\{\{prompt\}\}|\{\{session_id\}\}/g;

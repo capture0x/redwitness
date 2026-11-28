@@ -66,6 +66,7 @@ def list_advanced() -> list[dict]:
                                        | {"multimodal carrier" for c in lib.cases if c.media} | {"agentic chain" for c in lib.cases if c.steps}
                                        | {"knowledge map" for c in lib.cases if c.nodes} | {"multi-session campaign" for c in lib.cases if c.campaign}
                                        | {"jailbreak techniques" for c in lib.cases if c.category == "jailbreak"}
+                                       | {"cross-session leakage" for c in lib.cases if c.plant}
                                        | {"adaptive " + c.adaptive.method for c in lib.cases if c.adaptive and c.adaptive.method != "rewrite"}),
                     "needs_tool_attestation": any(c.category == "tool_abuse" for c in lib.cases),
                     "needs_multimodal": any(c.media for c in lib.cases), "needs_campaign": any(c.campaign for c in lib.cases)})

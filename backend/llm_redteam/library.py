@@ -32,7 +32,8 @@ DEFAULT_TEMPLATE = "{task}\n\n{documents}"
 ADAPTIVE_FAMILIES = ("language", "scenario", "persona", "format", "encoding")
 MAX_ADAPTIVE_ROUNDS = 5
 BENCHMARKS = ("harmbench", "jailbreakbench", "strongreject")
-CASE_TYPES = ("standard", "multimodal", "agentic_chain", "knowledge_map", "branching", "reasoning_chain")
+CASE_TYPES = ("standard", "multimodal", "agentic_chain", "knowledge_map", "branching", "reasoning_chain", "cross_session")
+MAX_PLANT_TURNS = 10
 
 # Example schema for external libraries (also reflected in the docs)
 EXAMPLE_LIBRARY = {
@@ -137,6 +138,7 @@ class TestCase:
     branching: tuple[branching_mod.BStep, ...] = ()  # type branching: the steps with their rule tables (the code picks the next step from the reply)
     source: str = ""                                # provenance of an imported case (dataset name/licence); display only
     reasoning: tuple[reasoning_mod.RStep, ...] = ()  # type reasoning_chain: multi-step problem; the code checks each intermediate reply against the step's rules
+    plant: tuple[str, ...] = ()                     # type cross_session: what identity A says first (contains {canary}); `turns` is what identity B asks afterwards
 
     @property
     def max_path(self) -> int:
@@ -427,6 +429,22 @@ def parse_library(data: bytes | str, *, fmt: str = "auto") -> Library:
                     turns = [r.sent() for r in rsteps]
                 elif c.get("reasoning"):
                     raise LibraryError("'reasoning' needs type: reasoning_chain")
+                plant: tuple = ()
+                if ctype == "cross_session":
+                    if cat != "data_leakage":
+                        raise LibraryError("a cross_session case must have category data_leakage (the scope's attack-class attestation applies)")
+                    if cres or c.get("variants") or bypass is not None or tools or docs:
+                        raise LibraryError("a cross_session case has only 'plant' and 'turns' (no variants, crescendo, bypass, tools or documents)")
+                    pl = c.get("plant")
+                    if not isinstance(pl, list) or not 1 <= len(pl) <= MAX_PLANT_TURNS or not all(isinstance(t, str) and t.strip() and len(t) <= 4000 for t in pl):
+                        raise LibraryError(f"'plant' must be a list of 1-{MAX_PLANT_TURNS} non-empty texts (identity A's messages)")
+                    if not any(CANARY_PLACEHOLDER in t for t in pl):
+                        raise LibraryError("at least one 'plant' message must contain {canary}: the unique value identity A shares")
+                    if any(CANARY_PLACEHOLDER in t for t in turns):
+                        raise LibraryError("the probe 'turns' (identity B) must not contain {canary}, otherwise a leak could not be told from an echo")
+                    plant = tuple(pl)
+                elif c.get("plant"):
+                    raise LibraryError("'plant' needs type: cross_session")
                 camp = c.get("campaign")
                 if camp not in (None, False):
                     if not isinstance(camp, dict) or set(camp) - {"ladder", "level"}:
@@ -444,7 +462,7 @@ def parse_library(data: bytes | str, *, fmt: str = "auto") -> Library:
             cases.append(TestCase(cid, cat, _str(c, "title", required=False, maxlen=300), tuple(turns),
                                   _str(c, "expected_behavior"), _str(c, "evaluator_hint", required=False, maxlen=2000),
                                   on_refusal, tuple(vs), ma, docs, delivery, template, sev, ow, cv, adaptive, bypass, tools, mtr,
-                                  asi, av, bm, cres, ctype, media, steps, nodes, expand, (), rung, fam, bsteps, source, rsteps))
+                                  asi, av, bm, cres, ctype, media, steps, nodes, expand, (), rung, fam, bsteps, source, rsteps, plant))
         except LibraryError as e:
             raise LibraryError(f"cases[{i}]: {e}") from None
     return Library(name, version, _str(meta, "description", required=False, maxlen=2000), tuple(cases),
@@ -457,7 +475,7 @@ def check_against_scope(lib: Library, scope: LLMScope, categories: list[str] | N
     allowed = set(scope.attack_classes) & (set(categories) if categories else set(scope.attack_classes))
     out = []
     for c in lib.cases:
-        if endpoint is not None and endpoint.provider == "http_json" and (c.tools or c.media):
+        if endpoint is not None and endpoint.provider in ("http_json", "ws_json") and (c.tools or c.media):
             continue                                       # a custom HTTP target has no tool-calling or file format: these cases are skipped, not failed
         if c.delivery == "ingest" and endpoint is not None and not endpoint.ingest_url:
             raise LibraryError(f"{c.id}: document upload (ingest) needs an ingest_url authorized on the scope's endpoint")
@@ -482,6 +500,11 @@ def check_against_scope(lib: Library, scope: LLMScope, categories: list[str] | N
                 raise LibraryError(f"{c.id}: a message (documents included) exceeds the scope's max_prompt_chars")
             if c.delivery == "ingest" and any(len(d.content) > scope.limits.max_prompt_chars for d in c.documents):
                 raise LibraryError(f"{c.id}: a document exceeds the scope's max_prompt_chars")
+        if c.plant:
+            if len(c.plant) > scope.limits.max_turns_per_conversation:
+                raise LibraryError(f"{c.id}: the 'plant' conversation exceeds the scope's turn limit ({len(c.plant)} > {scope.limits.max_turns_per_conversation})")
+            if any(len(t) > scope.limits.max_prompt_chars for t in c.plant):
+                raise LibraryError(f"{c.id}: a 'plant' message exceeds the scope's max_prompt_chars")
         if c.category in allowed:
             out.append(c)
     if not out:

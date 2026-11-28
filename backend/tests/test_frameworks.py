@@ -239,7 +239,7 @@ def test_shipped_agentic_and_adaptive_examples_are_valid_tagged_and_outside_the_
     p = parse_library(starter.template_text("ADV_plague_persona"))
     assert {c.adaptive.method for c in p.cases} == {"plague", "persona_teaming"}
     q = {c.id for c in parse_library(starter.quick_scan_text()).cases}
-    assert not any(c.id in q for c in [*a.cases, *p.cases]) and len(q) == 30                # 15 OWASP + 3 advanced + 12 jailbreak techniques
+    assert not any(c.id in q for c in [*a.cases, *p.cases]) and len(q) == 32                # 15 OWASP + 3 advanced + 12 jailbreak techniques + 2 cross-session
 
 
 def test_inconclusive_judgements_are_never_counted_as_clean_or_in_the_asr():

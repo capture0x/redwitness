@@ -55,13 +55,13 @@ def check_endpoint(url: str, local: bool, resolver=default_resolver) -> tuple[Re
         port = u.port
     except ValueError:
         return Reason.ENDPOINT_MALFORMED, {"why": "could not be parsed"}
-    if u.scheme not in ("http", "https") or not u.hostname:
-        return Reason.ENDPOINT_MALFORMED, {"why": "scheme must be http/https"}
+    if u.scheme not in ("http", "https", "ws", "wss") or not u.hostname:
+        return Reason.ENDPOINT_MALFORMED, {"why": "scheme must be http/https (or ws/wss for a WebSocket target)"}
     if u.username is not None or u.password is not None or "@" in u.netloc:
         return Reason.ENDPOINT_MALFORMED, {"why": "user info is not allowed"}
     if "%" in u.netloc:
         return Reason.ENDPOINT_MALFORMED, {"why": "'%' in authority"}
-    port = port or (443 if u.scheme == "https" else 80)
+    port = port or (443 if u.scheme in ("https", "wss") else 80)
     try:
         addrs = resolver(u.hostname, port)
     except Exception as e:  # noqa: BLE001

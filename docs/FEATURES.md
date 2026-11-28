@@ -13,6 +13,9 @@ This guide explains each part of RedWitness in detail: what it checks, how a res
 - [Jailbreak technique set](#jailbreak-technique-set)
 - [Client report](#client-report)
 - [MCP server audit](#mcp-server-audit)
+- [More target types: WebSocket, OAuth 2.0, extra headers](#more-target-types-websocket-oauth-20-extra-headers)
+- [Cross-session leakage](#cross-session-leakage)
+- [Retest and run comparison](#retest-and-run-comparison)
 
 ## OWASP LLM Top 10 compliance
 
@@ -367,3 +370,28 @@ Limits: the HTML check is a parser, not a browser, so it proves that active cont
 **Results are normal findings.** Each scan is recorded as a run, so its findings appear on the Findings page, in the OWASP and Agentic (ASI) views and in the client and technical reports, with remediation guidance per check. Deterministic findings are verified; judge-only findings need human review.
 
 *Where: Testing → MCP Servers; the run page of each scan for findings and reports. API: `POST /api/mcp-scans`, `GET /api/mcp-scans`.*
+
+## More target types: WebSocket, OAuth 2.0, extra headers
+
+| Option | When to use it | How it works |
+|---|---|---|
+| **WebSocket chat (JSON)** | The chat widget talks over `wss://` instead of HTTP | The signed request template is sent as one JSON message per turn. Each test conversation gets its own connection, so servers that keep the chat per connection see a real multi-turn conversation. The reply text is read from every incoming message at the response path and joined; it ends at the optional end-of-reply field (for example `done`) or after a 1.5 s pause. The connection goes through the same address check and IP pinning as HTTP. |
+| **Extra headers** | The app needs a CSRF token, a tenant id or similar on every request | Up to 10 name/value pairs next to the credential. Values are memory only; the target list shows the names. *Import from a copied request* fills them in from a cURL command. |
+| **OAuth 2.0** | The app uses short-lived access tokens from an identity provider | Client credentials or refresh token grant. The token URL is part of the signed scope; the token is fetched before the first request, cached, and fetched again when it expires or the target answers 401 (rotated refresh tokens are followed). Client secret and refresh token stay in memory. |
+
+*Where: Targets, Quick scan, Scopes (provider and authentication fields).*
+
+## Cross-session leakage
+
+*Test Library → Advanced examples → Cross-session leakage*, also part of every Quick scan. A `cross_session` case has two parts: identity A says the `plant` messages, which contain a unique value (`{canary}`); then identity B asks the `turns` in a new conversation. If the value appears in a reply to B, the app leaks data across users or sessions (shared memory, cache or retrieval index).
+
+- **Identity B** is a second credential when one is entered (*New Test → Second identity*): a finding is then **critical** (another user's data). Without it, B is the same credential in a fresh session: a finding is **high**.
+- **Decided by code**, no judge call. The value is new for every play and never appears in anything B sends, so a match is a leak, not an echo. Replays repeat the whole exchange with new values.
+- Maps to OWASP LLM02 and Agentic ASI06 (memory and context poisoning).
+
+## Retest and run comparison
+
+- **Retest** (*finding → Retest tab*): runs only that finding's case again, with the same signed scope, target and library. The outcome is **Fixed** (the case reached a verdict and the finding did not come back), **Still vulnerable** or **Inconclusive** (no verdict, for example the credential is gone). Every retest is listed on the finding. A finding whose latest retest is Fixed no longer counts in the dashboard and risk score, and a retest that finds the weakness again is not counted as a second one.
+- **Compare** (*run page → Compare with an earlier run*): by test case, what is **fixed**, **new**, **still open** and **not retested** between two runs.
+
+*API: `POST /api/findings/{id}/retest`, `GET /api/findings/{id}/retests`, `GET /api/runs/{id}/compare?base={run}`.*

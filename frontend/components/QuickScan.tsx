@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, Play, ScanSearch, ShieldCheck } from "lucide-react";
-import AuthFields from "@/components/AuthFields";
+import AuthFields, { authBody } from "@/components/AuthFields";
 import CustomHttpFields from "@/components/CustomHttpFields";
 import { Notice } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +14,10 @@ import { Check_ } from "@/components/ui/misc";
 import { api, fmtNum, usePoll } from "@/lib/api";
 import { useMe } from "@/lib/me";
 import { getPref, ONBOARDING_ACTIVE } from "@/lib/prefs";
-import { DEFAULT_PATH, DEFAULT_TEMPLATE, PRESETS, pathError, requestUrl, templateError } from "@/lib/targets";
+import { DEFAULT_PATH, DEFAULT_TEMPLATE, PRESETS, isTemplated, pathError, requestUrl, templateError } from "@/lib/targets";
 import { cn } from "@/lib/utils";
 
-const EMPTY = { base_url: "", model: "", provider: "openai_compat", auth_type: "bearer", auth_header: "", api_key: "", request_template: "", response_path: "" };
+const EMPTY = { base_url: "", model: "", provider: "openai_compat", auth_type: "bearer", auth_header: "", api_key: "", request_template: "", response_path: "", done_path: "", token_url: "" };
 
 /** URL + credential, then Review (shows exactly what will be signed) and Start. It still creates and signs a normal short-lived scope; nothing is loosened. */
 export default function QuickScan() {
@@ -45,12 +45,13 @@ export default function QuickScan() {
   const [busy, setBusy] = useState("");
   const set = (k: string, v: any) => { setF((p: any) => ({ ...p, [k]: v })); setPlan(null); setAuth(false); };
   const saved = (targets || []).find((t: any) => t.id === targetId);
-  const custom = !targetId && f.provider === "http_json";
+  const custom = !targetId && isTemplated(f.provider);
+  const ws = custom && f.provider === "ws_json";
   const customOk = !custom || (!templateError(f.request_template) && !pathError(f.response_path));
-  const body = () => ({ ...(targetId ? { target_id: targetId, api_key: f.api_key || null } : { base_url: f.base_url, model: f.model, provider: f.provider, auth_type: f.auth_type, auth_header: f.auth_type === "header" ? (f.auth_header || "Authorization") : null, api_key: f.api_key || null,
-      ...(custom ? { request_template: f.request_template, response_path: f.response_path.trim() } : {}) }),
+  const body = () => ({ ...(targetId ? { target_id: targetId, api_key: f.api_key || null } : { base_url: f.base_url, model: f.model, provider: f.provider, ...authBody(f), api_key: f.api_key || null,
+      ...(custom ? { request_template: f.request_template, response_path: f.response_path.trim(), done_path: ws ? f.done_path.trim() || null : null } : {}) }),
     include_tools: tools, tools_attested: tools && attest, ...(allOn ? {} : { owasp: chosen }) });
-  const canReview = (targetId || (f.base_url.trim() && (custom || f.model.trim()))) && customOk && (!tools || attest) && chosen.length > 0;
+  const canReview = (targetId || (f.base_url.trim() && (custom || f.model.trim()) && (f.auth_type !== "oauth" || (f.token_url.trim() && f.oauth_client_id)))) && customOk && (!tools || attest) && chosen.length > 0;
 
   const review = async () => { setErr(""); setBusy("review"); try { setPlan(await api("/quick-scan/prepare", { method: "POST", body: JSON.stringify(body()) })); setAuth(false); } catch (e: any) { setErr(e.message); } finally { setBusy(""); } };
   const start = async () => {
@@ -74,12 +75,12 @@ export default function QuickScan() {
           <NativeSelect data-testid="qs-target" value={targetId} onChange={(e) => { setTargetId(e.target.value); setPlan(null); setAuth(false); }}>
             <option value="">New target (enter the address below)</option>{(targets || []).map((t: any) => <option key={t.id} value={t.id}>{t.name} · {t.model}</option>)}</NativeSelect></div>
         {!targetId && <>
-          <div className="md:col-span-2 flex flex-wrap gap-2">{Object.entries(PRESETS).filter(([k]) => k !== "custom").map(([id, p]) => <button key={id} data-testid={`qs-preset-${id}`} onClick={() => { setF((x: any) => ({ ...x, provider: p.provider, base_url: p.base_url, model: p.model, ...(p.provider === "http_json" && !x.request_template ? { request_template: DEFAULT_TEMPLATE, response_path: DEFAULT_PATH } : {}) })); setPlan(null); }} className="rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-white">{p.label}</button>)}</div>
-          <div><Label help={custom ? "The full address your app POSTs chat messages to, for example https://app.example.com/api/chat. You must be allowed to test it." : "The address of the API you want to scan, for example https://api.openai.com/v1. You must be allowed to test it."}>{custom ? "Request URL" : "Base URL"}</Label><Input data-testid="qs-url" value={f.base_url} onChange={(e) => set("base_url", e.target.value)} placeholder={custom ? "https://app.example.com/api/chat" : "https://api.openai.com/v1"} />{f.base_url && !custom && <Hint>Requests go to <span className="font-mono text-slate-300">{requestUrl(f.provider, f.base_url)}</span></Hint>}</div>
+          <div className="md:col-span-2 flex flex-wrap gap-2">{Object.entries(PRESETS).filter(([k]) => k !== "custom").map(([id, p]) => <button key={id} data-testid={`qs-preset-${id}`} onClick={() => { setF((x: any) => ({ ...x, provider: p.provider, base_url: p.base_url, model: p.model, ...(isTemplated(p.provider) && !x.request_template ? { request_template: DEFAULT_TEMPLATE, response_path: DEFAULT_PATH } : {}) })); setPlan(null); }} className="rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-white">{p.label}</button>)}</div>
+          <div><Label help={ws ? "The WebSocket address the chat widget connects to, for example wss://app.example.com/chat. You must be allowed to test it." : custom ? "The full address your app POSTs chat messages to, for example https://app.example.com/api/chat. You must be allowed to test it." : "The address of the API you want to scan, for example https://api.openai.com/v1. You must be allowed to test it."}>{custom ? "Request URL" : "Base URL"}</Label><Input data-testid="qs-url" value={f.base_url} onChange={(e) => set("base_url", e.target.value)} placeholder={ws ? "wss://app.example.com/chat" : custom ? "https://app.example.com/api/chat" : "https://api.openai.com/v1"} />{f.base_url && !custom && <Hint>Requests go to <span className="font-mono text-slate-300">{requestUrl(f.provider, f.base_url)}</span></Hint>}</div>
           <div><Label help={custom ? "Optional: a label for lists and reports." : "The model id that API expects, such as gpt-4o or llama3.2."}>{custom ? "Model label (optional)" : "Model name"}</Label><Input data-testid="qs-model" value={f.model} onChange={(e) => set("model", e.target.value)} placeholder={custom ? "e.g. support-bot" : "e.g. gpt-4o"} /></div>
-          {custom && <div className="md:col-span-2"><CustomHttpFields testPrefix="qs" url={f.base_url} template={f.request_template} path={f.response_path} onChange={(k, v) => set(k, v)}
-            onImport={(r) => { setF((p: any) => ({ ...p, base_url: r.url, request_template: r.template, ...(r.secret ? { auth_type: r.auth_type, auth_header: r.auth_header, api_key: r.secret } : {}) })); setPlan(null); setAuth(false); }} /></div>}
-          <div className="md:col-span-2"><AuthFields testPrefix="qs" authType={f.auth_type} authHeader={f.auth_header} secret={f.api_key} onChange={(k, v) => set(k, v)} /></div></>}
+          {custom && <div className="md:col-span-2"><CustomHttpFields testPrefix="qs" url={f.base_url} template={f.request_template} path={f.response_path} ws={ws} done={f.done_path} onChange={(k, v) => set(k, v)}
+            onImport={(r) => { setF((p: any) => ({ ...p, base_url: r.url, request_template: r.template, auth_type: r.auth_type, auth_header: r.auth_header, api_key: r.secret, extra_headers: r.extraHeaders })); setPlan(null); setAuth(false); }} /></div>}
+          <div className="md:col-span-2"><AuthFields testPrefix="qs" f={f} set={set} /></div></>}
         {targetId && saved && <div className="md:col-span-2 text-xs text-slate-400">Uses the saved target <span className="font-mono text-slate-300">{saved.request_url}</span>{saved.has_key ? " and its key held in memory." : saved.api_key_env ? ` and the key from $${saved.api_key_env}.` : "."}
           <div className="mt-3"><Label>Credential (optional: replaces the one held in memory)</Label><Input type="password" autoComplete="off" value={f.api_key} onChange={(e) => set("api_key", e.target.value)} /></div></div>}
       </div>

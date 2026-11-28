@@ -4,6 +4,7 @@ import Link from "next/link";
 import FixTab from "./FixTab";
 import ReviewPanel, { IMPACT_TONE, SANDBOX } from "./ReviewPanel";
 import ReasoningTimeline from "./ReasoningTimeline";
+import RetestPanel from "./RetestPanel";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, FileText, FileWarning, Quote } from "lucide-react";
@@ -59,7 +60,7 @@ export default function FindingCard({ f, classes, onChange }: { f: any; classes?
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28 }} className="overflow-hidden">
             <div className="border-t border-white/[0.07] px-6 pb-5 pt-4">
               <Tabs defaultValue="evidence">
-                <TabsList><TabsTrigger value="evidence">Evidence</TabsTrigger><TabsTrigger value="judge">Judge verdict</TabsTrigger><TabsTrigger value="replay">Replay</TabsTrigger>{ev.reasoning && <TabsTrigger value="reasoning" data-testid="tab-reasoning">Reasoning</TabsTrigger>}<TabsTrigger value="review" data-testid="tab-review">Review</TabsTrigger><TabsTrigger value="convo">Conversation</TabsTrigger><TabsTrigger value="fix">Fix</TabsTrigger><TabsTrigger value="tree">Attack tree</TabsTrigger></TabsList>
+                <TabsList><TabsTrigger value="evidence">Evidence</TabsTrigger><TabsTrigger value="judge">Judge verdict</TabsTrigger><TabsTrigger value="replay">Replay</TabsTrigger>{ev.reasoning && <TabsTrigger value="reasoning" data-testid="tab-reasoning">Reasoning</TabsTrigger>}<TabsTrigger value="review" data-testid="tab-review">Review</TabsTrigger><TabsTrigger value="convo">Conversation</TabsTrigger><TabsTrigger value="fix">Fix</TabsTrigger><TabsTrigger value="retest" data-testid="tab-retest">Retest</TabsTrigger><TabsTrigger value="tree">Attack tree</TabsTrigger></TabsList>
                 <TabsContent value="evidence" className="space-y-3">
                   <Field k="Expected safe behavior">{ev.case?.expected_behavior}</Field>
                   {ev.owasp?.id && <Field k="OWASP classification"><span className="text-slate-200">{ev.owasp.id}</span> <span className="text-slate-500">· source: {({ library: "test library", judge: "judge LLM", default: "attack-class default" } as any)[ev.owasp.source] || ev.owasp.source}</span>
@@ -115,6 +116,7 @@ export default function FindingCard({ f, classes, onChange }: { f: any; classes?
                 <TabsContent value="reasoning"><ReasoningTimeline r={ev.reasoning} /></TabsContent>
                 <TabsContent value="review"><ReviewPanel f={f} onChange={onChange} /></TabsContent>
                 <TabsContent value="fix"><FixTab f={f} /></TabsContent>
+                <TabsContent value="retest"><RetestPanel f={f} /></TabsContent>
                 <TabsContent value="tree"><AttackTree f={f} /></TabsContent>
               </Tabs>
               <div className="mt-4 text-xs text-slate-500"><Link href={`/runs/${f.run_id}`} className="text-violet-300 hover:underline">Open run →</Link></div>

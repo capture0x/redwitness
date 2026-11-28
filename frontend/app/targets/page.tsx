@@ -11,11 +11,11 @@ import { Check_, Skeleton } from "@/components/ui/misc";
 import { Hint, Input, Label, NativeSelect } from "@/components/ui/input";
 import { api, usePoll } from "@/lib/api";
 import { useMe } from "@/lib/me";
-import AuthFields from "@/components/AuthFields";
+import AuthFields, { authBody } from "@/components/AuthFields";
 import CustomHttpFields from "@/components/CustomHttpFields";
-import { AUTH_LABEL, DEFAULT_PATH, DEFAULT_TEMPLATE, PRESETS, PROVIDER_LABEL, looksLocal, pathError, requestUrl, templateError } from "@/lib/targets";
+import { AUTH_LABEL, DEFAULT_PATH, DEFAULT_TEMPLATE, PRESETS, PROVIDER_LABEL, isTemplated, looksLocal, pathError, requestUrl, templateError } from "@/lib/targets";
 
-const EMPTY = { name: "", provider: "openai_compat", base_url: "", model: "", api_key: "", auth_type: "bearer", auth_header: "", api_key_env: "", local: false, ingest_url: "", ingest_delete_url: "", request_template: "", response_path: "" };
+const EMPTY = { name: "", provider: "openai_compat", base_url: "", model: "", api_key: "", auth_type: "bearer", auth_header: "", api_key_env: "", local: false, ingest_url: "", ingest_delete_url: "", request_template: "", response_path: "", done_path: "", token_url: "" };
 
 export default function Targets() {
   const { can } = useMe();
@@ -29,26 +29,28 @@ export default function Targets() {
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const url = requestUrl(f.provider, f.base_url);
-  const custom = f.provider === "http_json";
-  const withCustomDefaults = (x: any) => x.provider === "http_json" && !x.request_template ? { ...x, request_template: DEFAULT_TEMPLATE, response_path: x.response_path || DEFAULT_PATH } : x;
+  const custom = isTemplated(f.provider);
+  const ws = f.provider === "ws_json";
+  const withCustomDefaults = (x: any) => isTemplated(x.provider) && !x.request_template ? { ...x, request_template: DEFAULT_TEMPLATE, response_path: x.response_path || DEFAULT_PATH } : x;
   const customOk = !custom || (!templateError(f.request_template) && !pathError(f.response_path));
 
   const preset = (id: string) => { const p = PRESETS[id]; setF(withCustomDefaults({ ...EMPTY, ...p, local: looksLocal(p.base_url) })); };
   const openNew = () => { setEditing(null); setF({ ...EMPTY, ...PRESETS.openai }); setAdv(false); setErr(null); setOk(null); setForm(true); };
-  const openEdit = (t: any) => { setEditing(t.id); setF({ ...EMPTY, name: t.name, provider: t.provider, base_url: t.base_url, model: t.model, auth_type: t.auth_type || "bearer", auth_header: t.auth_header || "", api_key_env: t.api_key_env || "", local: t.local, ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "" }); setAdv(!!(t.ingest_url || t.api_key_env)); setErr(null); setOk(null); setForm(true); };
+  const openEdit = (t: any) => { setEditing(t.id); setF({ ...EMPTY, name: t.name, provider: t.provider, base_url: t.base_url, model: t.model, auth_type: t.auth_type || "bearer", auth_header: t.auth_header || "", api_key_env: t.api_key_env || "", local: t.local, ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "", done_path: t.done_path || "", token_url: t.token_url || "",
+      oauth_client_id: "", extra_headers: undefined }); setAdv(!!(t.ingest_url || t.api_key_env)); setErr(null); setOk(null); setForm(true); };
 
   const save = async () => {
     setErr(null); setBusy(true);
     try {
-      const body: any = { name: f.name, provider: f.provider, base_url: f.base_url, model: f.model, local: f.local, auth_type: f.auth_type, auth_header: f.auth_type === "header" ? (f.auth_header || "Authorization") : null, api_key_env: f.api_key_env || null, ingest_url: custom ? null : f.ingest_url || null, ingest_delete_url: custom ? null : f.ingest_delete_url || null,
-        request_template: custom ? f.request_template : null, response_path: custom ? f.response_path.trim() : null };
+      const body: any = { name: f.name, provider: f.provider, base_url: f.base_url, model: f.model, local: f.local, api_key_env: f.api_key_env || null, ingest_url: custom ? null : f.ingest_url || null, ingest_delete_url: custom ? null : f.ingest_delete_url || null,
+        request_template: custom ? f.request_template : null, response_path: custom ? f.response_path.trim() : null, done_path: ws ? f.done_path.trim() || null : null, ...authBody(f) };
       if (f.api_key) body.api_key = f.api_key;                       // empty field on edit = keep the key held in memory
       await api(editing ? `/targets/${editing}` : "/targets", { method: editing ? "PUT" : "POST", body: JSON.stringify(body) });
       setOk(editing ? "Target updated." : "Target saved."); setForm(false); setF(EMPTY); reload();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   };
   const del = async (t: any) => { if (!confirm(`Delete target “${t.name}”? Existing signed scopes are not affected.`)) return; try { await api(`/targets/${t.id}`, { method: "DELETE" }); reload(); } catch (e: any) { setErr(e.message); } };
-  const clearKey = async (t: any) => { try { await api(`/targets/${t.id}`, { method: "PUT", body: JSON.stringify({ name: t.name, provider: t.provider, base_url: t.base_url, model: t.model, local: t.local, auth_type: t.auth_type, auth_header: t.auth_header, api_key_env: t.api_key_env, ingest_url: t.ingest_url, ingest_delete_url: t.ingest_delete_url, request_template: t.request_template, response_path: t.response_path, api_key: "" }) }); reload(); } catch (e: any) { setErr(e.message); } };
+  const clearKey = async (t: any) => { try { await api(`/targets/${t.id}`, { method: "PUT", body: JSON.stringify({ name: t.name, provider: t.provider, base_url: t.base_url, model: t.model, local: t.local, auth_type: t.auth_type, auth_header: t.auth_header, api_key_env: t.api_key_env, ingest_url: t.ingest_url, ingest_delete_url: t.ingest_delete_url, request_template: t.request_template, response_path: t.response_path, done_path: t.done_path, token_url: t.token_url, api_key: "" }) }); reload(); } catch (e: any) { setErr(e.message); } };
 
   return (
     <>
@@ -63,12 +65,13 @@ export default function Targets() {
           <div className="grid gap-4 md:grid-cols-2">
             <div><Label help="A label only you see, so you can recognise the target in lists and reports. For example: Support bot (staging).">Name</Label><Input data-testid="t-name" value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Support bot (staging)" /></div>
             <div><Label help={custom ? "Optional for a custom API: only a label shown in lists and reports (it is not sent unless your template contains it)." : "The model id the target API expects, such as gpt-4o, claude-sonnet-5-5 or llama3.2. It is sent with every request."}>{custom ? "Model label (optional)" : "Model name"}</Label><Input data-testid="t-model" value={f.model} onChange={(e) => set("model", e.target.value)} placeholder={custom ? "e.g. support-bot" : "e.g. gpt-4o, llama3.2"} /></div>
-            <div><Label help="The request format the target speaks. OpenAI-compatible covers OpenAI, Ollama, vLLM, LM Studio and most gateways. Choose Anthropic for the Claude API. Choose Custom HTTP for any other JSON chat API, such as the backend of a web chatbot.">Provider</Label><NativeSelect data-testid="t-provider" value={f.provider} onChange={(e) => setF((p: any) => withCustomDefaults({ ...p, provider: e.target.value }))}><option value="openai_compat">OpenAI-compatible (OpenAI, Ollama, vLLM, LM Studio …)</option><option value="anthropic">Anthropic</option><option value="http_json">Custom HTTP API (JSON)</option></NativeSelect></div>
-            <div><Label help={custom ? "The full address the chat request is POSTed to, exactly as your app calls it, for example https://app.example.com/api/chat." : "The address of the API without the final /chat/completions part. RedWitness adds the right path for the provider (shown below the field)."}>{custom ? "Request URL" : "Base URL"}</Label><Input data-testid="t-url" value={f.base_url} onChange={(e) => { set("base_url", e.target.value); setF((p: any) => ({ ...p, base_url: e.target.value, local: looksLocal(e.target.value) })); }} placeholder={custom ? "https://app.example.com/api/chat" : "https://api.openai.com/v1"} />
+            <div><Label help="The request format the target speaks. OpenAI-compatible covers OpenAI, Ollama, vLLM, LM Studio and most gateways. Choose Anthropic for the Claude API. Choose Custom HTTP for any other JSON chat API, such as the backend of a web chatbot.">Provider</Label><NativeSelect data-testid="t-provider" value={f.provider} onChange={(e) => setF((p: any) => withCustomDefaults({ ...p, provider: e.target.value }))}><option value="openai_compat">OpenAI-compatible (OpenAI, Ollama, vLLM, LM Studio …)</option><option value="anthropic">Anthropic</option><option value="http_json">Custom HTTP API (JSON)</option><option value="ws_json">WebSocket chat (JSON)</option></NativeSelect></div>
+            <div><Label help={ws ? "The WebSocket address the chat widget connects to, for example wss://app.example.com/chat (Network tab → WS)." : custom ? "The full address the chat request is POSTed to, exactly as your app calls it, for example https://app.example.com/api/chat." : "The address of the API without the final /chat/completions part. RedWitness adds the right path for the provider (shown below the field)."}>{custom ? "Request URL" : "Base URL"}</Label><Input data-testid="t-url" value={f.base_url} onChange={(e) => { set("base_url", e.target.value); setF((p: any) => ({ ...p, base_url: e.target.value, local: looksLocal(e.target.value) })); }} placeholder={ws ? "wss://app.example.com/chat" : custom ? "https://app.example.com/api/chat" : "https://api.openai.com/v1"} />
               {url && !custom && <Hint>Requests go to <span className="font-mono text-slate-300">{url}</span></Hint>}</div>
-            {custom && <div className="md:col-span-2"><CustomHttpFields url={url} template={f.request_template} path={f.response_path} onChange={(k, v) => set(k, v)}
-              onImport={(r) => setF((p: any) => ({ ...p, base_url: r.url, request_template: r.template, local: looksLocal(r.url), ...(r.secret ? { auth_type: r.auth_type, auth_header: r.auth_header, api_key: r.secret } : {}) }))} /></div>}
-            <div className="md:col-span-2"><AuthFields authType={f.auth_type} authHeader={f.auth_header} secret={f.api_key} editing={!!editing} onChange={(k, v) => set(k === "api_key" ? "api_key" : k, v)} /></div>
+            {custom && <div className="md:col-span-2"><CustomHttpFields url={url} template={f.request_template} path={f.response_path} ws={ws} done={f.done_path} onChange={(k, v) => set(k, v)}
+              onImport={(r) => setF((p: any) => ({ ...p, base_url: r.url, request_template: r.template, local: looksLocal(r.url), auth_type: r.auth_type, auth_header: r.auth_header, api_key: r.secret, extra_headers: r.extraHeaders }))} /></div>}
+            <div className="md:col-span-2"><AuthFields f={f} set={set} editing={!!editing} />{editing && targets?.find((x: any) => x.id === editing)?.extra_header_names?.length > 0 && f.extra_headers === undefined &&
+              <Hint>Extra headers held in memory: {targets.find((x: any) => x.id === editing).extra_header_names.join(", ")}. Add headers here to replace them.</Hint>}</div>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-300"><Check_ checked={f.local} onCheckedChange={(v) => set("local", !!v)} />Local / private network address <span className="text-xs text-slate-500">(needed for localhost, Ollama or internal servers; cloud metadata addresses stay blocked)</span></label>
           <button className="text-xs text-violet-300 underline" onClick={() => setAdv(!adv)}>{adv ? "Hide" : "Show"} advanced ({custom ? "environment variable" : "environment variable, document upload"})</button>
@@ -76,7 +79,7 @@ export default function Targets() {
             <div><Label help="Optional. If the key is already in the server environment, enter only its variable name here instead of typing the key.">API key environment variable</Label><Input value={f.api_key_env} onChange={(e) => set("api_key_env", e.target.value)} placeholder="MY_TARGET_API_KEY" /></div>
             {!custom && <><div><Label help="Only for RAG tests: the address where RedWitness uploads a test document so the target can read it. Leave empty if you do not test document ingestion.">Document upload URL <span className="text-slate-600">(RAG tests)</span></Label><Input value={f.ingest_url} onChange={(e) => set("ingest_url", e.target.value)} placeholder="https://…/ingest" /></div>
             <div><Label>Document delete URL</Label><Input value={f.ingest_delete_url} onChange={(e) => set("ingest_delete_url", e.target.value)} placeholder="https://…/ingest/{name}" /></div></>}</div>}
-          <div className="flex gap-2"><Button disabled={busy || !f.name.trim() || !f.base_url.trim() || (!custom && !f.model.trim()) || !customOk} onClick={save} data-testid="save-target">{editing ? "Save changes" : "Save target"}</Button><Button variant="ghost" onClick={() => setForm(false)}>Cancel</Button></div>
+          <div className="flex gap-2"><Button disabled={busy || !f.name.trim() || !f.base_url.trim() || (!custom && !f.model.trim()) || !customOk || (f.auth_type === "oauth" && !f.token_url.trim())} onClick={save} data-testid="save-target">{editing ? "Save changes" : "Save target"}</Button><Button variant="ghost" onClick={() => setForm(false)}>Cancel</Button></div>
         </CardContent></Card>)}
 
       {!targets ? <Skeleton className="h-28" /> : targets.length === 0 && !form ? (

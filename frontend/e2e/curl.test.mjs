@@ -22,8 +22,19 @@ test("Chrome bash copy with cookie, $'...' body and line continuations", () => {
   assert.equal(r.method, "POST");
   assert.deepEqual(JSON.parse(r.template), { question: "{{prompt}}", conversation_id: "{{session_id}}", lang: "en", note: "it's ok" });
   assert.equal(r.auth_type, "cookie"); assert.equal(r.secret, "sid=abc123; theme=dark");
-  assert.deepEqual(r.ignoredHeaders, ["x-request-id"]);
+  assert.deepEqual(r.extraHeaders, [{ name: "x-request-id", value: "77" }]);
   assert.ok(r.promptFound && r.sessionFound && r.warnings.length === 0);
+});
+
+test("CSRF and tenant headers become extra headers next to the cookie", () => {
+  const r = parseCurl(`curl 'https://app.example.com/api/chat' -b 'sid=1' -H 'X-CSRF-Token: csrf-123' -H 'X-Tenant: acme' -H 'accept: */*' --data-raw '{"message":"hi"}'`, "hi");
+  assert.equal(r.auth_type, "cookie");
+  assert.deepEqual(r.extraHeaders, [{ name: "X-CSRF-Token", value: "csrf-123" }, { name: "X-Tenant", value: "acme" }]);
+});
+
+test("only extra headers (no credential) give the 'none' auth type", () => {
+  const r = parseCurl(`curl 'https://app.example.com/api/chat' -H 'X-Tenant: acme' --data-raw '{"message":"hi"}'`, "hi");
+  assert.equal(r.auth_type, "none"); assert.equal(r.secret, "");
 });
 
 test("Bearer token and a guessed message field without typed text", () => {

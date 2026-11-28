@@ -64,6 +64,8 @@ class EndpointIn(BaseModel):
     ingest_delete_url: str | None = None
     request_template: str | None = Field(default=None, max_length=8000)   # custom HTTP (http_json) endpoints only
     response_path: str | None = Field(default=None, max_length=200)
+    done_path: str | None = Field(default=None, max_length=200)           # WebSocket (ws_json) only
+    token_url: str | None = Field(default=None, max_length=500)           # OAuth 2.0 token endpoint
 
 
 class LimitsIn(BaseModel):
@@ -165,7 +167,24 @@ class McpScanIn(BaseModel):
     judge_review: bool = False                                      # also let the judge model read every description (verbatim quote required)
 
 
-class TargetIn(BaseModel):
+class HeaderIn(BaseModel):
+    name: str = Field(max_length=64)
+    value: str = Field(max_length=8000)                            # secret: memory only
+
+
+class AuthExtrasIn(BaseModel):
+    """Credentials beyond one key: extra headers and OAuth 2.0. Every value here is a secret held in memory only (never stored or returned)."""
+    extra_headers: list[HeaderIn] | None = Field(default=None, max_length=10)   # None keeps what is held in memory; [] clears it
+    oauth_grant: str | None = None                                 # client_credentials | refresh_token
+    oauth_client_id: str | None = Field(default=None, max_length=500)
+    oauth_client_secret: str | None = Field(default=None, max_length=8000)
+    oauth_refresh_token: str | None = Field(default=None, max_length=8000)
+    oauth_scope: str | None = Field(default=None, max_length=500)
+    token_url: str | None = Field(default=None, max_length=500)     # not secret: part of the signed scope
+    done_path: str | None = Field(default=None, max_length=200)     # WebSocket targets: the field that marks the end of a streamed reply
+
+
+class TargetIn(AuthExtrasIn):
     name: str
     provider: str = "openai_compat"
     base_url: str
@@ -194,7 +213,7 @@ QUICK_LIMITS = dict(max_total_tokens=400_000, max_requests=600, max_requests_per
 QUICK_VALID_DAYS = 7
 
 
-class QuickScanIn(BaseModel):
+class QuickScanIn(AuthExtrasIn):
     target_id: str | None = None                                   # a saved target, or the fields below for a new one
     name: str | None = None
     provider: str = "openai_compat"
@@ -278,6 +297,7 @@ class RunIn(BaseModel):
     benchmark: list[str] | None = None    # only imported benchmark cases (harmbench / jailbreakbench / strongreject)
     case_ids: list[str] | None = None     # only these case ids (a campaign session runs exactly one)
     case_types: list[str] | None = None   # only these case types: standard | multimodal | agentic_chain | knowledge_map
+    second_api_key: str | None = Field(default=None, max_length=8000)   # cross_session: identity B's credential (same kind as A's); memory only
 
 
 class DefenseIn(BaseModel):
@@ -408,13 +428,44 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     live: dict[str, tuple[asyncio.Task, Executor, Governor]] = {}
     live_analyses: dict[str, tuple[asyncio.Task, Governor]] = {}
     target_keys: dict[str, str] = {}                                    # saved-target API keys: memory only (lost on restart), never stored or returned
+    target_extra: dict[str, tuple] = {}                                 # saved-target extra headers ((name, value), ...): memory only
+    target_oauth: dict[str, object] = {}                                # saved-target OAuth client (targets.OAuth): memory only
+
+    def _auth_parts(body, primary_header: str | None):
+        """(extra headers, OAuth client) from a request; None for a part that was not sent (keep what is held). Raises HTTP 422 on bad input."""
+        try:
+            extra = None if body.extra_headers is None else targetcfg.clean_extra_headers([h.model_dump() for h in body.extra_headers], primary_header)
+            oauth = None
+            if body.auth_type == "oauth" and (body.oauth_client_id or body.oauth_client_secret or body.oauth_refresh_token):
+                oauth = targetcfg.clean_oauth(body.oauth_grant, body.oauth_client_id, body.oauth_client_secret, body.oauth_refresh_token, body.oauth_scope)
+        except targetcfg.TargetInputError as e:
+            bad(422, str(e))
+        return extra, oauth
+
+    def _remember(tid: str, secret, extra, oauth, auth_type: str) -> None:
+        if secret:
+            target_keys[tid] = secret
+        if extra is not None:
+            target_extra[tid] = extra
+        if oauth is not None:
+            target_oauth[tid] = oauth
+        if auth_type != "oauth":
+            target_oauth.pop(tid, None)
 
     def _saved_key(url: str):
         """The saved target's credential for this address: a plain key (str) or, for cookie / custom-header targets, a Credential. Memory only."""
         for t in store.list_targets():
-            if t["request_url"] == url and t["id"] in target_keys:
-                v = target_keys[t["id"]]
-                return v if t.get("auth_type", "bearer") == "bearer" else Credential(t["auth_type"], v, t.get("auth_header") or "Authorization")
+            kind, tid = t.get("auth_type", "bearer"), t["id"]
+            if t["request_url"] != url or not (tid in target_keys or tid in target_extra or tid in target_oauth or kind == "none"):
+                continue
+            v, extra = target_keys.get(tid), target_extra.get(tid, ())
+            if kind == "bearer":
+                return v if not extra else Credential("bearer", v or "", extra=extra)
+            if kind == "oauth":
+                return Credential("oauth", extra=extra, oauth=target_oauth.get(tid)) if tid in target_oauth else None
+            if kind == "none":
+                return Credential("none", extra=extra)
+            return Credential(kind, v, t.get("auth_header") or "Authorization", extra) if v else None
         return None
 
     def _credential(ep, explicit: str | None):
@@ -429,7 +480,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         if env:
             for t in store.list_targets():
                 if t["request_url"] == ep.url and t.get("auth_type", "bearer") != "bearer":
-                    return Credential(t["auth_type"], targetcfg.clean_credential(t["auth_type"], env), t.get("auth_header") or "Authorization")
+                    return Credential(t["auth_type"], targetcfg.clean_credential(t["auth_type"], env), t.get("auth_header") or "Authorization", target_extra.get(t["id"], ()))
         return env
 
     app = FastAPI(title="RedWitness", version="1.0.0")
@@ -788,6 +839,14 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             store.audit("run.refused", reason=None, detail={"scope_id": body.scope_id, "why": "BIAS_CONTROL"})
             bad(422, refusal, "BIAS_CONTROL")
         key = _credential(ep, body.api_key)
+        key_b = None
+        if body.second_api_key:                                          # identity B for cross_session cases: same auth kind as A, another account
+            kind = key.kind if isinstance(key, Credential) else "bearer"
+            try:
+                v = targetcfg.clean_credential("cookie" if kind == "cookie" else "header", body.second_api_key)
+            except targetcfg.TargetInputError as e:
+                bad(422, f"Second identity: {e}")
+            key_b = Credential(key.kind, v, key.header, key.extra) if isinstance(key, Credential) else v
         canaries = tuple(dict.fromkeys(c.strip() for c in body.canaries if c.strip()))
         if len(canaries) > 10 or any(not 6 <= len(c) <= 200 for c in canaries):
             bad(422, "Canary values: at most 10, each 6-200 characters (short values cause false matches).")
@@ -799,7 +858,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         run_id = store.create_run(body.scope_id, ep.url, {
             "library": {"id": body.library_id, "name": lib.name, "version": lib.version, "sha256": lib.sha256},
             "categories": body.categories, "stream": body.stream, "replay_n": cfg.replay_n, "replay_k": cfg.replay_k,
-            "cases": len(cases), "model": ep.model, "scope_version": scope.version,
+            "cases": len(cases), "model": ep.model, "scope_version": scope.version, "second_identity": key_b is not None,
             "started_by": request.state.user, "canaries": len(canaries),
             "owasp_planned": planned, "owasp_skipped": skipped, "ingest_cleanup": bool(ep.ingest_delete_url),
             "adaptive": bool(attacker), "attacker_model": attacker.model if attacker else None,
@@ -810,7 +869,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         gov = Governor(scope, lambda action, **kw: store.audit(action, run_id=run_id, reason=kw.get("reason"),
                                                                 detail=kw.get("detail")))
         ex = Executor(run_id=run_id, endpoint=ep, library=lib, cases=cases, adapter=adapter_factory(ep, key, body.stream),
-                      evaluator=Evaluator(judge, min_confidence=st["min_confidence"]), governor=gov, store=store, config=cfg, attacker=attacker, verifier=verifier_obj, sandbox=sandbox_obj)
+                      evaluator=Evaluator(judge, min_confidence=st["min_confidence"]), governor=gov, store=store, config=cfg, attacker=attacker, verifier=verifier_obj, sandbox=sandbox_obj,
+                      adapter_b=adapter_factory(ep, key_b, body.stream) if key_b else None)
 
         async def go():
             try:
@@ -963,12 +1023,12 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             if not t:
                 bad(404, "Target not found.")
             tf = {k: t[k] for k in ("name", "provider", "base_url", "request_url", "model", "api_key_env", "ingest_url", "ingest_delete_url", "auth_type", "auth_header",
-                                    "request_template", "response_path")}
+                                    "request_template", "response_path", "done_path", "token_url")}
             local = t["local"]
         else:
             try:
                 tf = targetcfg.validate(body.name or targetcfg.default_name(body.base_url or "", body.model or ""), body.provider, body.base_url or "", body.model or "",
-                                        None, None, None, body.auth_type, body.auth_header, body.request_template, body.response_path)
+                                        None, None, None, body.auth_type, body.auth_header, body.request_template, body.response_path, body.done_path, body.token_url)
             except targetcfg.TargetInputError as e:
                 bad(422, str(e))
             local = targetcfg.is_local_host(tf["request_url"]) if body.local is None else body.local
@@ -980,7 +1040,8 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         scope_in = ScopeIn(name=f"Quick scan: {host}"[:100], client=host, authorized_by=user, authorization_doc_sha256=doc, valid_days=QUICK_VALID_DAYS, valid_from=body.valid_from,
                            endpoints=[EndpointIn(url=tf["request_url"], provider=tf["provider"], model=tf["model"], local=local, api_key_env=tf["api_key_env"],
                                                  ingest_url=tf["ingest_url"], ingest_delete_url=tf["ingest_delete_url"],
-                                                 request_template=tf["request_template"], response_path=tf["response_path"])],
+                                                 request_template=tf["request_template"], response_path=tf["response_path"],
+                                                 done_path=tf.get("done_path"), token_url=tf.get("token_url"))],
                            attack_classes=classes, limits=LimitsIn(**QUICK_LIMITS), tool_abuse_attested=bool(body.include_tools), lineage_id=body.lineage_id)
         return tf, local, scope_in
 
@@ -1017,7 +1078,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             cases = [c for c in cases if (c.owasp_category or owasp_mod.default_for(c.category)) in want]
         runnable = len(cases)
         format_skipped = sum(1 for c in lib.cases if (c.tools or c.media) and (want is None or (c.owasp_category or owasp_mod.default_for(c.category)) in want)
-                             and c.category in sc.attack_classes) if tf["provider"] == "http_json" else 0
+                             and c.category in sc.attack_classes) if tf["provider"] in ("http_json", "ws_json") else 0
         planned = sorted({c.owasp_category or owasp_mod.default_for(c.category) for c in cases})
         wanted = want if want is not None else [c["id"] for c in owasp_mod.CATEGORIES]
         not_run = [w for w in wanted if w not in planned]
@@ -1026,7 +1087,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         return {"digest": digest, "lineage_id": sc.lineage_id, "valid_from": sc.content()["valid_from"], "content": sc.content(), "request_url": tf["request_url"], "local": local,
                 "auth_type": tf["auth_type"], "cases": runnable, "cases_in_library": total, "skipped_cases": total - runnable, "owasp": want, "categories_planned": planned, "categories_skipped": not_run,
                 "skipped_format": format_skipped, "skipped_unauthorized": total - runnable - format_skipped,
-                "skip_note": ("A custom HTTP target has no tool-calling or file format, so cases with fake tools or image/audio files are skipped." if tf["provider"] == "http_json"
+                "skip_note": ("A custom HTTP or WebSocket target has no tool-calling or file format, so cases with fake tools or image/audio files are skipped." if tf["provider"] in ("http_json", "ws_json")
                               else "Tool-abuse categories need the test-environment attestation above."),
                 "judge_configured": judge_factory(settings()) is not None, "signing_available": ring.can_sign}
 
@@ -1048,6 +1109,9 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
                 secret = targetcfg.clean_credential(tf["auth_type"], body.api_key)
             except targetcfg.TargetInputError as e:
                 bad(422, str(e))
+        extra, oauth = _auth_parts(body, tf.get("auth_header"))          # checked BEFORE anything is signed or saved
+        if tf["auth_type"] == "oauth" and oauth is None and not (body.target_id and body.target_id in target_oauth):
+            bad(422, "OAuth needs the client id and the client secret or refresh token.")
         try:
             sc = to_scope(scope_in, signing=True)
             sid = store.create_scope(sc, request.state.user, ring, expected_hash=body.expected_hash)
@@ -1061,8 +1125,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             store.update_target(tid, tf, local, request.state.user, bool(secret))
         else:
             tid = store.add_target(tf, local, request.state.user, bool(secret))["id"]
-        if secret:
-            target_keys[tid] = secret
+        _remember(tid, secret, extra, oauth, tf["auth_type"])
         lid = _import_text(starter.quick_scan_text(), request)["library_id"]
         run = await _start_run(RunIn(scope_id=sid, endpoint_url=tf["request_url"], library_id=lid, owasp=_quick_owasp(body)), request)
         store.audit("quick_scan.start", actor=request.state.user, run_id=run["id"], detail={"scope_id": sid, "target_id": tid, "endpoint": tf["request_url"], "auth_type": tf["auth_type"], "tools": body.include_tools})
@@ -1307,6 +1370,49 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         pdf = reports.render_pdf(reports.report_html(run, run["findings"], limits, calibration=calibration_mod.summary(store.review_rows())))
         return attach(pdf, "application/pdf", f"report-{run_id[:8]}.pdf")
 
+    # ------------------------------------------------------------ retest a finding / compare two runs
+    class RetestIn(BaseModel):
+        api_key: str | None = Field(default=None, max_length=8000)     # optional: a fresh credential (memory only) if the saved one is gone
+
+    @app.post("/api/findings/{fid}/retest", status_code=202)
+    async def finding_retest(fid: str, body: RetestIn, request: Request):
+        """Runs ONLY this finding's case again, with the same scope, target and library, to check a fix. Every normal gate applies
+        (the scope must still be valid). The result is linked to the finding: fixed, still_vulnerable or inconclusive."""
+        f = store.get_finding(fid)
+        if f is None:
+            bad(404, "Finding not found.")
+        run = store.get_run(f["run_id"])
+        cfg = run.get("config") or {}
+        if cfg.get("kind") == "mcp_scan":
+            bad(422, "MCP findings are rechecked by auditing the MCP server again (Testing → MCP Servers).")
+        lib_id = (cfg.get("library") or {}).get("id")
+        if not lib_id or store.get_library(lib_id) is None:
+            bad(409, "The test library of the original run is no longer available, so this case cannot be replayed.")
+        r = await _start_run(RunIn(scope_id=run["scope_id"], endpoint_url=run["endpoint_url"], library_id=lib_id, case_ids=[f["case_id"]],
+                                   api_key=body.api_key, replay_n=cfg.get("replay_n"), replay_k=cfg.get("replay_k"), stream=bool(cfg.get("stream"))),
+                             request, {"retest_of": fid, "retest_case": f["case_id"]})
+        store.audit("finding.retest", actor=request.state.user, run_id=r["id"], detail={"finding_id": fid, "case_id": f["case_id"]})
+        return {"run_id": r["id"]}
+
+    @app.get("/api/findings/{fid}/retests")
+    def finding_retests(fid: str):
+        if store.get_finding(fid) is None:
+            bad(404, "Finding not found.")
+        return store.retests_of(fid)
+
+    @app.get("/api/runs/{rid}/compare")
+    def runs_compare(rid: str, base: str):
+        head, prev = store.get_run(rid), store.get_run(base)
+        if head is None or prev is None:
+            bad(404, "Run not found.")
+        if rid == base:
+            bad(422, "Choose a different run to compare with.")
+        out = store.compare_runs(base, rid)
+        out["base"] = {"id": base, "created_at": prev["created_at"], "endpoint_url": prev["endpoint_url"]}
+        out["head"] = {"id": rid, "created_at": head["created_at"], "endpoint_url": head["endpoint_url"]}
+        out["same_target"] = prev["endpoint_url"] == head["endpoint_url"]
+        return out
+
     @app.post("/api/client-report")
     def client_report(body: ClientReportIn, request: Request):
         """The client-ready penetration test report for one engagement (1-20 finished runs under one signed scope), as PDF or DOCX."""
@@ -1420,8 +1526,9 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     # ------------------------------------------------------------ saved targets
     def _target_view(t: dict) -> dict:
         return {k: t[k] for k in ("id", "name", "provider", "base_url", "request_url", "model", "api_key_env", "local", "ingest_url", "ingest_delete_url", "created_by", "created_at", "auth_type", "auth_header",
-                                "request_template", "response_path")} \
-            | {"has_key": t["id"] in target_keys, "suggest_local": targetcfg.is_local_host(t["request_url"])}
+                                "request_template", "response_path", "done_path", "token_url")} \
+            | {"has_key": t["id"] in target_keys or t["id"] in target_oauth, "suggest_local": targetcfg.is_local_host(t["request_url"]),
+               "extra_header_names": [n for n, _v in target_extra.get(t["id"], ())], "has_oauth": t["id"] in target_oauth}
 
     @app.get("/api/targets")
     def targets_list():
@@ -1431,7 +1538,7 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
     def targets_create(body: TargetIn, request: Request):
         try:
             t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header,
-                                    body.request_template, body.response_path)
+                                    body.request_template, body.response_path, body.done_path, body.token_url)
             secret = targetcfg.clean_credential(body.auth_type, body.api_key) if body.api_key else body.api_key
         except targetcfg.TargetInputError as e:
             bad(422, str(e))
@@ -1442,15 +1549,15 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
             if "targets_name_key" in str(e) or "unique" in str(e).lower():
                 bad(409, "A target with this name already exists.")
             raise
-        if secret:
-            target_keys[row["id"]] = secret
+        extra, oauth = _auth_parts(body, t.get("auth_header"))
+        _remember(row["id"], secret, extra, oauth, t["auth_type"])
         return _target_view(row)
 
     @app.put("/api/targets/{tid}")
     def targets_update(tid: str, body: TargetIn, request: Request):
         try:
             t = targetcfg.validate(body.name, body.provider, body.base_url, body.model, body.api_key_env, body.ingest_url, body.ingest_delete_url, body.auth_type, body.auth_header,
-                                    body.request_template, body.response_path)
+                                    body.request_template, body.response_path, body.done_path, body.token_url)
             secret = targetcfg.clean_credential(body.auth_type, body.api_key) if body.api_key else body.api_key
         except targetcfg.TargetInputError as e:
             bad(422, str(e))
@@ -1458,10 +1565,10 @@ def create_app(dsn: str | None = None, keyring: Keyring | None = None, judge_fac
         row = store.update_target(tid, t, local, request.state.user, body.api_key is not None)
         if row is None:
             bad(404, "Target not found.")
-        if secret:                                                    # a non-empty key replaces the stored one, an empty string clears it, None keeps it
-            target_keys[tid] = secret
-        elif body.api_key == "":
+        if body.api_key == "":                                        # a non-empty key replaces the stored one, an empty string clears it, None keeps it
             target_keys.pop(tid, None)
+        extra, oauth = _auth_parts(body, t.get("auth_header"))
+        _remember(tid, secret, extra, oauth, t["auth_type"])
         return _target_view(row)
 
     @app.delete("/api/targets/{tid}")

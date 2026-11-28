@@ -99,6 +99,8 @@ ALTER TABLE targets ADD COLUMN IF NOT EXISTS auth_type TEXT NOT NULL DEFAULT 'be
 ALTER TABLE targets ADD COLUMN IF NOT EXISTS auth_header TEXT;
 ALTER TABLE targets ADD COLUMN IF NOT EXISTS request_template TEXT;
 ALTER TABLE targets ADD COLUMN IF NOT EXISTS response_path TEXT;
+ALTER TABLE targets ADD COLUMN IF NOT EXISTS done_path TEXT;
+ALTER TABLE targets ADD COLUMN IF NOT EXISTS token_url TEXT;
 CREATE TABLE IF NOT EXISTS analyses (
   id TEXT PRIMARY KEY, kind TEXT NOT NULL, scope_id TEXT NOT NULL, endpoint_url TEXT NOT NULL, status TEXT NOT NULL,
   created_by TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL, finished_at DOUBLE PRECISION, params_json TEXT NOT NULL, result_json TEXT);
@@ -644,6 +646,52 @@ class Store:
                 out.append({"finding_id": r["finding_id"], "human": r["verdict"], "system_status": r["system_status"], "at": r["at"], **json.loads(r["snapshot_json"])})
         return out
 
+    def retests_of(self, fid: str) -> list[dict]:
+        """Runs started to retest this finding, newest first, with their outcome for the finding's case:
+        fixed (the case ran to a verdict and was not verified), still_vulnerable (verified again), running, or inconclusive (no verdict)."""
+        f = self.get_finding(fid)
+        if f is None:
+            return []
+        with self.conn() as c:
+            runs = c.execute("SELECT id, status, stop_reason, created_at, finished_at FROM runs WHERE (config_json::jsonb ->> 'retest_of') = %s ORDER BY created_at DESC",
+                             (fid,)).fetchall()
+            out = []
+            for r in runs:
+                judged = c.execute("SELECT count(*) AS n FROM attempts WHERE run_id=%s AND case_id=%s AND is_replay=0 AND outcome LIKE 'judged:%%'",
+                                   (r["id"], f["case_id"])).fetchone()["n"]
+                again = c.execute("SELECT status FROM findings WHERE run_id=%s AND case_id=%s", (r["id"], f["case_id"])).fetchall()
+                if r["status"] == "running":
+                    outcome = "running"
+                elif any(x["status"] == "verified" for x in again):
+                    outcome = "still_vulnerable"
+                elif judged and not again:
+                    outcome = "fixed"
+                else:
+                    outcome = "inconclusive"                    # no verdict (blocked, error, credential gone) or only unverified signals
+                out.append({"run_id": r["id"], "status": r["status"], "stop_reason": r["stop_reason"], "created_at": r["created_at"],
+                            "finished_at": r["finished_at"], "outcome": outcome})
+        return out
+
+    def compare_runs(self, base_id: str, head_id: str) -> dict:
+        """What changed between two runs, by case: new (verified only in head), fixed (verified in base, tested in head and not verified),
+        still_open (verified in both) and not_retested (verified in base, not tested in head)."""
+        def state(rid):
+            with self.conn() as c:
+                verified = {r["case_id"]: r for r in c.execute("SELECT case_id, title, category, owasp_category, evidence_json FROM findings WHERE run_id=%s AND status='verified'", (rid,))}
+                tested = {r["case_id"] for r in c.execute("SELECT DISTINCT case_id FROM attempts WHERE run_id=%s AND is_replay=0 AND outcome LIKE 'judged:%%'", (rid,))}
+            return verified, tested
+        bv, bt = state(base_id)
+        hv, ht = state(head_id)
+
+        def row(r):
+            ev = json.loads(r["evidence_json"])
+            return {"case_id": r["case_id"], "title": r["title"], "category": r["category"], "owasp_category": r["owasp_category"],
+                    "severity": severity_for(r["category"], (ev.get("case") or {}).get("severity"))}
+        return {"new": [row(hv[c]) for c in sorted(set(hv) - set(bv))],
+                "fixed": [row(bv[c]) for c in sorted(set(bv) - set(hv)) if c in ht],
+                "still_open": [row(hv[c]) for c in sorted(set(bv) & set(hv))],
+                "not_retested": [row(bv[c]) for c in sorted(set(bv) - set(hv)) if c not in ht]}
+
     def get_finding(self, fid: str) -> dict | None:
         with self.conn() as c:
             r = c.execute("SELECT * FROM findings WHERE id=%s", (fid,)).fetchone()
@@ -668,18 +716,18 @@ class Store:
     def add_target(self, t: dict, local: bool, by: str, key_set: bool) -> dict:
         tid = str(uuid.uuid4())
         with self.conn() as c:
-            c.execute("INSERT INTO targets (id, name, provider, base_url, request_url, model, api_key_env, local, ingest_url, ingest_delete_url, created_by, created_at, auth_type, auth_header, request_template, response_path)"
-                      " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            c.execute("INSERT INTO targets (id, name, provider, base_url, request_url, model, api_key_env, local, ingest_url, ingest_delete_url, created_by, created_at, auth_type, auth_header, request_template, response_path, done_path, token_url)"
+                      " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                       (tid, t["name"], t["provider"], t["base_url"], t["request_url"], t["model"], t["api_key_env"], local, t["ingest_url"], t["ingest_delete_url"], by, time.time(),
-                       t["auth_type"], t["auth_header"], t.get("request_template"), t.get("response_path")))
+                       t["auth_type"], t["auth_header"], t.get("request_template"), t.get("response_path"), t.get("done_path"), t.get("token_url")))
         self.audit("target.create", actor=by, detail={"target_id": tid, "name": t["name"], "request_url": t["request_url"], "provider": t["provider"], "auth_type": t["auth_type"], "key_set": key_set})
         return self.get_target(tid)
 
     def update_target(self, tid: str, t: dict, local: bool, by: str, key_changed: bool) -> dict | None:
         with self.conn() as c:
-            n = c.execute("UPDATE targets SET name=%s, provider=%s, base_url=%s, request_url=%s, model=%s, api_key_env=%s, local=%s, ingest_url=%s, ingest_delete_url=%s, auth_type=%s, auth_header=%s, request_template=%s, response_path=%s WHERE id=%s",
+            n = c.execute("UPDATE targets SET name=%s, provider=%s, base_url=%s, request_url=%s, model=%s, api_key_env=%s, local=%s, ingest_url=%s, ingest_delete_url=%s, auth_type=%s, auth_header=%s, request_template=%s, response_path=%s, done_path=%s, token_url=%s WHERE id=%s",
                           (t["name"], t["provider"], t["base_url"], t["request_url"], t["model"], t["api_key_env"], local, t["ingest_url"], t["ingest_delete_url"], t["auth_type"], t["auth_header"],
-                           t.get("request_template"), t.get("response_path"), tid)).rowcount
+                           t.get("request_template"), t.get("response_path"), t.get("done_path"), t.get("token_url"), tid)).rowcount
         if not n:
             return None
         self.audit("target.update", actor=by, detail={"target_id": tid, "name": t["name"], "request_url": t["request_url"], "key_changed": key_changed})
@@ -921,10 +969,16 @@ class Store:
 
     def stats(self) -> dict:
         with self.conn() as c:
-            one = lambda q: list(c.execute(q).fetchone().values())[0]  # noqa: E731
-            verified = [self._finding(r) for r in c.execute("SELECT * FROM findings WHERE status='verified'")]
+            # Open findings only: a retest run re-finding a weakness is not a second weakness, and a finding whose latest retest says fixed is closed.
+            verified = [self._finding(r) for r in c.execute("""SELECT f.* FROM findings f JOIN runs r ON r.id=f.run_id
+                         WHERE f.status='verified' AND (r.config_json::jsonb ->> 'retest_of') IS NULL""")]
+            retested = {r["fid"] for r in c.execute("SELECT DISTINCT (config_json::jsonb ->> 'retest_of') AS fid FROM runs WHERE (config_json::jsonb ->> 'retest_of') IS NOT NULL")}
             by_cat: dict[str, int] = {}
             sev: dict[str, int] = {s: 0 for s in SEVERITIES}
+        fixed = {fid for fid in retested if (self.retests_of(fid) or [{}])[0].get("outcome") == "fixed"}
+        verified = [f for f in verified if f["id"] not in fixed]
+        with self.conn() as c:
+            one = lambda q: list(c.execute(q).fetchone().values())[0]  # noqa: E731
             for f in verified:
                 by_cat[f["category"]] = by_cat.get(f["category"], 0) + 1
                 sev[f["severity"]] += 1
@@ -933,8 +987,8 @@ class Store:
             series = c.execute("""WITH d AS (SELECT id, tokens_used,
                         to_char(to_timestamp(created_at), 'YYYY-MM-DD') AS day FROM runs)
                     SELECT d.day AS day, coalesce(sum(d.tokens_used),0)::bigint AS tokens, count(*)::int AS runs,
-                        (SELECT count(*) FROM findings f JOIN d d2 ON d2.id=f.run_id
-                          WHERE f.status='verified' AND d2.day=d.day)::int AS verified,
+                        (SELECT count(*) FROM findings f JOIN d d2 ON d2.id=f.run_id JOIN runs rr ON rr.id=f.run_id
+                          WHERE f.status='verified' AND d2.day=d.day AND (rr.config_json::jsonb ->> 'retest_of') IS NULL)::int AS verified,
                         (SELECT count(*) FROM attempts a JOIN d d3 ON d3.id=a.run_id
                           WHERE a.is_replay=0 AND a.outcome='judged:no_violation' AND d3.day=d.day)::int AS passed,
                         (SELECT count(*) FROM attempts a JOIN d d4 ON d4.id=a.run_id
@@ -945,7 +999,7 @@ class Store:
             return {"runs": one("SELECT count(*) FROM runs"),
                     "attempts": one("SELECT count(*) FROM attempts WHERE is_replay=0"),
                     "tokens": int(one("SELECT coalesce(sum(tokens_used),0) FROM runs")),
-                    "findings_verified": len(verified),
+                    "findings_verified": len(verified), "findings_fixed": len(fixed),
                     "findings_total": one("SELECT count(*) FROM findings"),
                     "verified_by_category": by_cat, "severity_counts": sev, "risk_score": score,
                     "judged": total_judged, "passed": judged.get("judged:no_violation", 0),

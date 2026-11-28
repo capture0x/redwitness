@@ -76,7 +76,8 @@ def _scope(**ep):
 def test_existing_scopes_keep_their_digest():
     s = _scope()
     s.validate()
-    legacy = {k: v for k, v in asdict(s.endpoints[0]).items() if k not in ("request_template", "response_path")}
+    from llm_redteam.scope import CUSTOM_FIELDS
+    legacy = {k: v for k, v in asdict(s.endpoints[0]).items() if k not in CUSTOM_FIELDS}
     assert s.content()["endpoints"] == [legacy]                                     # the same signed bytes as before this feature
 
 

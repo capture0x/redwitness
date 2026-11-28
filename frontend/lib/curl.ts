@@ -5,7 +5,7 @@
  */
 export type CurlImport = {
   url: string; method: string; body: any; template: string; promptFound: boolean; sessionFound: boolean;
-  auth_type: "bearer" | "cookie" | "header"; auth_header: string; secret: string; ignoredHeaders: string[]; warnings: string[];
+  auth_type: "bearer" | "cookie" | "header" | "none"; auth_header: string; secret: string; extraHeaders: { name: string; value: string }[]; warnings: string[];
 };
 
 const PROMPT_KEYS = /^(message|prompt|question|query|input|text|content|q|user_input|userMessage|user_message|msg)$/i;
@@ -81,7 +81,7 @@ export function parseCurl(cmd: string, typedMessage = ""): CurlImport {
 
   // credential: cookie first, then Authorization, then the first other x-* token header
   let auth_type: CurlImport["auth_type"] = "bearer", auth_header = "", secret = "";
-  const ignored: string[] = [];
+  const extraHeaders: { name: string; value: string }[] = [];
   const cookie = headers.find(([k]) => k.toLowerCase() === "cookie");
   const authz = headers.find(([k]) => k.toLowerCase() === "authorization");
   if (cookie) { auth_type = "cookie"; secret = cookie[1]; }
@@ -92,10 +92,13 @@ export function parseCurl(cmd: string, typedMessage = ""): CurlImport {
   for (const [k] of headers) {
     const l = k.toLowerCase();
     if (SKIP_HEADERS.has(l) || (cookie && l === "cookie") || (authz && l === "authorization")) continue;
-    if (!secret && /^x-[a-z0-9-]*(token|key|auth|api)/i.test(k)) { auth_type = "header"; auth_header = k; secret = headers.find(([h]) => h === k)![1]; continue; }
-    ignored.push(k);
+    const v = headers.find(([h]) => h === k)![1];
+    if (!secret && /^x-[a-z0-9-]*(token|key|auth|api)/i.test(k)) { auth_type = "header"; auth_header = k; secret = v; continue; }
+    if (!extraHeaders.some((h) => h.name.toLowerCase() === l) && extraHeaders.length < 10) extraHeaders.push({ name: k, value: v });   // CSRF token, tenant id ...
   }
-  if (cookie && authz) ignored.push("authorization");
+  if (cookie && authz) extraHeaders.push({ name: "Authorization", value: authz[1] });
+  if (!secret && !extraHeaders.length) auth_type = "bearer";
+  else if (!secret) auth_type = "none";
 
   // template: the typed message (or the most likely message field) becomes {{prompt}}, conversation ids become {{session_id}}
   let promptFound = false, sessionFound = false;
@@ -120,5 +123,5 @@ export function parseCurl(cmd: string, typedMessage = ""): CurlImport {
   }
   if (!promptFound) warnings.push("Could not tell which field holds the message. Type the message you sent in the box above, or put {{prompt}} into the template yourself.");
   return { url: `${u.origin}${u.pathname}`, method, body, template: JSON.stringify(tpl, null, 2), promptFound, sessionFound,
-           auth_type, auth_header, secret, ignoredHeaders: ignored, warnings };
+           auth_type, auth_header, secret, extraHeaders, warnings };
 }

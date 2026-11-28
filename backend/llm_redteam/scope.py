@@ -32,8 +32,9 @@ CLASS_LABEL = {
     "misinformation": "Misinformation / hallucination",
     "resource_consumption": "Resource consumption",
 }
-PROVIDERS = ("openai_compat", "anthropic", "http_json")
-CUSTOM_FIELDS = ("request_template", "response_path")   # only http_json endpoints carry them
+PROVIDERS = ("openai_compat", "anthropic", "http_json", "ws_json")
+TEMPLATE_PROVIDERS = ("http_json", "ws_json")             # custom JSON APIs over HTTP POST or a WebSocket: a signed request template + response path
+CUSTOM_FIELDS = ("request_template", "response_path", "done_path", "token_url")   # optional; left out of the signed content when unset (older digests stay)
 ALL_PROVIDERS = PROVIDERS + VECTOR_PROVIDERS + MCP_PROVIDERS
 
 # Hard upper bounds: a typo must not create an "unlimited" scope
@@ -69,6 +70,8 @@ class Endpoint:
     ingest_delete_url: str | None = None  # endpoint that DELETES the uploaded document (cleanup). The '{name}' placeholder is replaced with the document name; otherwise the DELETE body is {"name": ...}
     request_template: str | None = None   # http_json only: the JSON request body with {{prompt}} / {{messages}} / {{session_id}} placeholders
     response_path: str | None = None      # http_json only: dotted path of the reply text in the JSON response, e.g. data.reply
+    done_path: str | None = None          # ws_json only: dotted path that is true in the message that ends a streamed reply (unset: the reply ends after a short pause)
+    token_url: str | None = None          # OAuth 2.0 token endpoint used to obtain / refresh the access token (client credentials or refresh token grant)
 
 
 @dataclass(frozen=True)
@@ -121,8 +124,14 @@ class LLMScope:
         for e in self.endpoints:
             if e.provider not in ALL_PROVIDERS:
                 raise ScopeInputError(f"unknown provider: {e.provider}")
-            if not e.url.startswith(("http://", "https://")):
+            if e.provider == "ws_json":
+                if not e.url.startswith(("ws://", "wss://")):
+                    raise ScopeInputError(f"a WebSocket endpoint URL must be ws:// or wss://: {e.url!r}")
+            elif not e.url.startswith(("http://", "https://")):
                 raise ScopeInputError(f"the endpoint URL must be http(s): {e.url!r}")
+            if e.token_url is not None:
+                if not e.token_url.startswith(("http://", "https://")) or e.provider in VECTOR_PROVIDERS + MCP_PROVIDERS:
+                    raise ScopeInputError("token_url must be an http(s) OAuth token endpoint of a chat target")
             for fld in ("ingest_url", "ingest_delete_url"):
                 v = getattr(e, fld)
                 if v is not None and not v.startswith(("http://", "https://")):
@@ -131,18 +140,22 @@ class LLMScope:
                 raise ScopeInputError("ingest_delete_url can only be defined together with ingest_url")
             if e.provider in VECTOR_PROVIDERS + MCP_PROVIDERS and (e.ingest_url or e.ingest_delete_url):
                 raise ScopeInputError("a vector store or MCP endpoint cannot define ingest_url / ingest_delete_url")
-            if e.provider == "http_json":
+            if e.provider in TEMPLATE_PROVIDERS:
                 from .customhttp import TemplateError, parse_path, parse_template
                 try:
                     parse_template(e.request_template)
                     parse_path(e.response_path)
+                    if e.done_path is not None:
+                        parse_path(e.done_path)
                 except TemplateError as err:
                     raise ScopeInputError(f"{e.url}: {err}") from None
                 if e.ingest_url or e.ingest_delete_url:
-                    raise ScopeInputError("a custom HTTP endpoint cannot define ingest_url / ingest_delete_url")
+                    raise ScopeInputError("a custom HTTP or WebSocket endpoint cannot define ingest_url / ingest_delete_url")
             elif e.request_template is not None or e.response_path is not None:
-                raise ScopeInputError("request_template / response_path are only for custom HTTP (http_json) endpoints")
-            if e.provider not in VECTOR_PROVIDERS + MCP_PROVIDERS and e.provider != "http_json" and not e.model.strip():
+                raise ScopeInputError("request_template / response_path are only for custom HTTP (http_json) or WebSocket (ws_json) endpoints")
+            if e.done_path is not None and e.provider != "ws_json":
+                raise ScopeInputError("done_path is only for WebSocket (ws_json) endpoints")
+            if e.provider not in VECTOR_PROVIDERS + MCP_PROVIDERS + TEMPLATE_PROVIDERS and not e.model.strip():
                 raise ScopeInputError(f"a model name is required for the endpoint: {e.url}")
             if e.url in seen:
                 raise ScopeInputError(f"endpoint defined twice: {e.url}")

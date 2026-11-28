@@ -5,6 +5,8 @@ Runs inside the isolated network namespace after the UI test (sandbox/inside_ns.
   Reasoning  a stand-in that computes a wrong second step, and one that computes it right
   Sandbox    the real runner process (runner/runner.py) analyses an unsafe reply from a stand-in target
   Jailbreak  the shipped twelve-technique library against the demo target (four techniques work, eight are refused)
+  Targets    a WebSocket chat (sandbox/mock_ws.py), an OAuth 2.0 protected API and an API that needs extra headers
+  Leakage    cross-session leakage (two identities), retest of a finding and the comparison of two runs
   MCP        the read-only audit of the mock MCP server (sandbox/mock_mcp.py): every planted flaw is found and no tool is ever called
   Custom     a non-OpenAI JSON chat API (the mock's /custom/chat, session kept on the server) through a signed request template
 """
@@ -20,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 API = "http://127.0.0.1:8000/api"
 MOCK = "http://127.0.0.1:9100"
 MCP = "http://127.0.0.1:9400"
+WS = "ws://127.0.0.1:9500"
 EXTRA_PORT = 9300
 EXTRA = f"http://127.0.0.1:{EXTRA_PORT}"
 sys.path.insert(0, os.path.dirname(__file__))
@@ -98,11 +101,15 @@ def main():
            (f"{MOCK}/v1/chat/completions", f"{MOCK}/hardened/v1/chat/completions", f"{EXTRA}/reason/wrong/v1/chat/completions",
             f"{EXTRA}/reason/right/v1/chat/completions", f"{EXTRA}/unsafe/v1/chat/completions")]
     custom_url = f"{MOCK}/custom/chat"
+    eps += [{"url": f"{WS}/chat", "provider": "ws_json", "model": "", "local": True, "request_template": '{"message": "{{prompt}}", "session_id": "{{session_id}}"}',
+             "response_path": "text", "done_path": "done"},
+            {"url": f"{MOCK}/oauth/v1/chat/completions", "provider": "openai_compat", "model": "m", "local": True, "token_url": f"{MOCK}/oauth/token"},
+            {"url": f"{MOCK}/headers/v1/chat/completions", "provider": "openai_compat", "model": "m", "local": True}]
     eps += [{"url": f"{MCP}/mcp", "provider": "mcp", "model": "", "local": True}, {"url": f"{MCP}/secure/mcp", "provider": "mcp", "model": "", "local": True}]
     eps.append({"url": custom_url, "provider": "http_json", "model": "", "local": True,
                 "request_template": '{"message": "{{prompt}}", "session_id": "{{session_id}}"}', "response_path": "reply"})
     body = {"name": "Module E2E", "client": "Local Sandbox", "authorized_by": "QA", "authorization_doc_sha256": "7a" * 32, "valid_days": 7, "endpoints": eps,
-            "attack_classes": ["system_prompt_extraction", "misinformation", "unsafe_output", "jailbreak", "mcp_server_audit"], "limits": {"max_requests": 400, "max_requests_per_minute": 600}}
+            "attack_classes": ["system_prompt_extraction", "misinformation", "unsafe_output", "jailbreak", "mcp_server_audit", "data_leakage"], "limits": {"max_requests": 400, "max_requests_per_minute": 600}}
     s, prep = call("POST", "/scopes/prepare", body)
     assert s == 200, (s, prep)
     s, sc = call("POST", "/scopes", {**body, "expected_hash": prep["digest"], "lineage_id": prep["lineage_id"], "valid_from": prep["content"]["valid_from"]})
@@ -173,7 +180,39 @@ def main():
           got == {"jb-persona", "jb-developer-mode", "jb-prefix", "jb-crescendo"}, str(sorted(got)))
     check("jailbreak: findings are mapped to OWASP LLM01", all(f["owasp_category"] == "LLM01_PromptInjection" for f in run["findings"] if f["case_id"] in got))
 
-    # 6. MCP server audit: read-only listing, every planted flaw found, no tool called, authentication checked
+    # 6. More target types: WebSocket chat, OAuth 2.0, extra headers (the same leak case against each)
+    run = wait_run(start(sid, library("ws-e2e", [leak]), f"{WS}/chat"))
+    f = next((x for x in run["findings"] if x["case_id"] == "sys-001"), None)
+    check("websocket: a leak through a streamed WebSocket chat is a verified finding", bool(f) and f["status"] == "verified" and mock_llm.CANARY in json.dumps(f["evidence"]["transcript"]),
+          str(f and f["status"]))
+    s, t = call("POST", "/targets", {"name": "OAuth app", "provider": "openai_compat", "base_url": f"{MOCK}/oauth/v1", "model": "m", "local": True, "auth_type": "oauth",
+                                     "token_url": f"{MOCK}/oauth/token", "oauth_client_id": "rw-client", "oauth_client_secret": "rw-secret"})
+    check("oauth: the target is saved with its client secret in memory only", s == 201 and t.get("has_oauth") and "rw-secret" not in json.dumps(t), f"{s}")
+    run = wait_run(start(sid, library("oauth-e2e", [leak]), f"{MOCK}/oauth/v1/chat/completions"))
+    check("oauth: requests carry a fetched access token and the leak is verified", any(x["status"] == "verified" for x in run["findings"]), f"{run['status']} {run.get('stop_reason')}")
+    s, t = call("POST", "/targets", {"name": "Header app", "provider": "openai_compat", "base_url": f"{MOCK}/headers/v1", "model": "m", "local": True, "auth_type": "none",
+                                     "extra_headers": [{"name": "X-CSRF-Token", "value": "csrf-123"}, {"name": "X-Tenant", "value": "acme"}]})
+    check("headers: extra header names are shown, values are not", s == 201 and t.get("extra_header_names") == ["X-CSRF-Token", "X-Tenant"] and "csrf-123" not in json.dumps(t))
+    run = wait_run(start(sid, library("headers-e2e", [leak]), f"{MOCK}/headers/v1/chat/completions"))
+    check("headers: the app accepts the requests (no 403) and the leak is verified", any(x["status"] == "verified" for x in run["findings"]), f"{run['status']} {run.get('stop_reason')}")
+
+    # 7. Cross-session leakage, retest and run comparison
+    xs = json.load(open(os.path.join(os.path.dirname(__file__), "..", "backend", "starter_kit", "advanced", "ADV_cross_session.json"), encoding="utf-8"))
+    xlib = library("cross-e2e", xs["cases"])
+    first = wait_run(start(sid, xlib, f"{MOCK}/v1/chat/completions"))
+    got = {x["case_id"]: x for x in first["findings"]}
+    check("cross-session: another session's recovery code is a verified leak; the confidential codename is not",
+          set(got) == {"xs-recovery-code"} and got["xs-recovery-code"]["status"] == "verified" and got["xs-recovery-code"]["evidence"]["cross_session"]["leaked"], str(sorted(got)))
+    fid = got["xs-recovery-code"]["id"] if got.get("xs-recovery-code") else None
+    s, d = call("POST", f"/findings/{fid}/retest", {})
+    check("retest: only the finding's case runs again", s == 202 and {a["case_id"] for a in wait_run(d["run_id"])["attempts"]} == {"xs-recovery-code"}, f"{s}")
+    _, hist = call("GET", f"/findings/{fid}/retests")
+    check("retest: not fixed yet, so the outcome is still_vulnerable", hist and hist[0]["outcome"] == "still_vulnerable", json.dumps(hist)[:200])
+    _, cmp = call("GET", f"/runs/{d['run_id']}/compare?base={first['id']}")
+    check("compare: the finding is still open between the two runs", [x["case_id"] for x in cmp["still_open"]] == ["xs-recovery-code"] and cmp["fixed"] == [] and cmp["new"] == [],
+          json.dumps(cmp)[:200])
+
+    # 8. MCP server audit: read-only listing, every planted flaw found, no tool called, authentication checked
     def mcp_scan(url, **kw):
         s, d = call("POST", "/mcp-scans", {"scope_id": sid, "endpoint_url": url, **kw})
         assert s == 202, (s, d)

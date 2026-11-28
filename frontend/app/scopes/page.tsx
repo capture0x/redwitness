@@ -1,4 +1,5 @@
 "use client";
+import { isTemplated } from "@/lib/targets";
 import CustomHttpFields from "@/components/CustomHttpFields";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, FileCheck2, Fingerprint, Plus, ShieldAlert, ShieldCheck, Trash2, XCircle } from "lucide-react";
@@ -13,7 +14,7 @@ import { Check_ } from "@/components/ui/misc";
 import { Item, Stagger } from "@/components/motion";
 import { useMe } from "@/lib/me";
 
-const EP = { url: "", provider: "openai_compat", model: "", local: false, api_key_env: "", ingest_url: "", ingest_delete_url: "", request_template: "", response_path: "" };
+const EP = { url: "", provider: "openai_compat", model: "", local: false, api_key_env: "", ingest_url: "", ingest_delete_url: "", request_template: "", response_path: "", done_path: "", token_url: "" };
 const EMPTY = { name: "", client: "", authorized_by: "", authorization_doc_sha256: "", valid_days: 30, endpoints: [EP], attack_classes: [] as string[], tool_abuse_attested: false, adaptive_allowed: false, max_adaptive_rounds: 3, multimodal_allowed: false, campaign_allowed: false, branching_allowed: false, max_campaign_sessions: 5, limits: null as any };
 
 export default function Scopes() {
@@ -29,19 +30,20 @@ export default function Scopes() {
   const [ok, setOk] = useState<string | null>(null);
   const limits = f.limits || meta?.limit_defaults || {};
   const body = () => ({ ...f, limits, endpoints: f.endpoints.map((e: any) => ({ ...e, api_key_env: e.api_key_env || null, ingest_url: e.ingest_url || null, ingest_delete_url: e.ingest_delete_url || null,
-    request_template: e.provider === "http_json" ? e.request_template : null, response_path: e.provider === "http_json" ? (e.response_path || "").trim() : null })) });
+    request_template: isTemplated(e.provider) ? e.request_template : null, response_path: isTemplated(e.provider) ? (e.response_path || "").trim() : null,
+    done_path: e.provider === "ws_json" ? (e.done_path || "").trim() || null : null, token_url: (e.token_url || "").trim() || null })) });
   const set = (k: string, v: any) => setF({ ...f, [k]: v });
   const setEp = (i: number, k: string, v: any) => set("endpoints", f.endpoints.map((e: any, j: number) => (j === i ? { ...e, [k]: v } : e)));
   const prefilled = useRef(false);
   const fromTarget = (i: number, id: string) => {
     const t = (saved || []).find((x: any) => x.id === id);
     if (!t) return;
-    set("endpoints", f.endpoints.map((e: any, j: number) => (j === i ? { ...e, url: t.request_url, provider: t.provider, model: t.model, local: t.local, api_key_env: t.api_key_env || "", ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "" } : e)));
+    set("endpoints", f.endpoints.map((e: any, j: number) => (j === i ? { ...e, url: t.request_url, provider: t.provider, model: t.model, local: t.local, api_key_env: t.api_key_env || "", ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "", done_path: t.done_path || "", token_url: t.token_url || "" } : e)));
   };
   useEffect(() => {                                                         // /scopes?target=<id> (from the Targets page): open the form with that target filled in
     const id = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("target") : null;
     const t = id && saved && !prefilled.current ? saved.find((x: any) => x.id === id) : null;
-    if (t && can("admin")) { prefilled.current = true; setF({ ...EMPTY, name: `${t.name} scope`, endpoints: [{ url: t.request_url, provider: t.provider, model: t.model, local: t.local, api_key_env: t.api_key_env || "", ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "" }] }); setForm(true); }
+    if (t && can("admin")) { prefilled.current = true; setF({ ...EMPTY, name: `${t.name} scope`, endpoints: [{ url: t.request_url, provider: t.provider, model: t.model, local: t.local, api_key_env: t.api_key_env || "", ingest_url: t.ingest_url || "", ingest_delete_url: t.ingest_delete_url || "", request_template: t.request_template || "", response_path: t.response_path || "", done_path: t.done_path || "", token_url: t.token_url || "" }] }); setForm(true); }
   }, [saved, me]); // eslint-disable-line
   const onDoc = async (file?: File) => { if (file) set("authorization_doc_sha256", await sha256Hex(await file.arrayBuffer())); };
   const preview = async () => { setErr(null); setOk(null); setAck(false); try { setPrep(await api("/scopes/prepare", { method: "POST", body: JSON.stringify(body()) })); } catch (e: any) { setErr(e.message); } };
@@ -80,7 +82,8 @@ export default function Scopes() {
                   <div className="md:col-span-5"><Input placeholder="API key environment variable name" value={e.api_key_env} onChange={(x) => setEp(i, "api_key_env", x.target.value)} /></div>
                   <div className="md:col-span-5"><Input placeholder="document upload URL (indirect tests, optional)" value={e.ingest_url} onChange={(x) => setEp(i, "ingest_url", x.target.value)} /></div>
                   <div className="md:col-span-12"><Input placeholder="document delete URL (cleanup; the {name} placeholder is replaced with the document name, optional)" value={e.ingest_delete_url} onChange={(x) => setEp(i, "ingest_delete_url", x.target.value)} /></div>
-                  {e.provider === "http_json" && <div className="md:col-span-12"><CustomHttpFields testPrefix={`sc-${i}`} url={e.url} template={e.request_template || ""} path={e.response_path || ""} onChange={(k, v) => setEp(i, k, v)} /></div>}
+                  {isTemplated(e.provider) && <div className="md:col-span-12"><CustomHttpFields testPrefix={`sc-${i}`} url={e.url} template={e.request_template || ""} path={e.response_path || ""} ws={e.provider === "ws_json"} done={e.done_path || ""} onChange={(k, v) => setEp(i, k, v)} /></div>}
+                  <div className="md:col-span-12"><Input placeholder="OAuth 2.0 token URL (only for targets that use OAuth; optional)" value={e.token_url || ""} onChange={(x) => setEp(i, "token_url", x.target.value)} /></div>
                   <label className="flex items-center gap-2 text-xs text-slate-300 md:col-span-2"><Check_ checked={e.local} onCheckedChange={(v) => setEp(i, "local", !!v)} />local</label>
                   {f.endpoints.length > 1 && <button className="text-xs text-red-300 md:col-span-12" onClick={() => set("endpoints", f.endpoints.filter((_: any, j: number) => j !== i))}><Trash2 className="mr-1 inline h-3 w-3" />remove</button>}
                 </div>))}
@@ -143,7 +146,7 @@ export default function Scopes() {
             <div className="mt-4 space-y-4 text-sm">
               <div className="grid gap-2 md:grid-cols-3"><KV k="Name" v={prep.content.name} /><KV k="Client" v={prep.content.client} /><KV k="Authorized by" v={prep.content.authorized_by} /><KV k="Start" v={fmtDate(prep.content.valid_from)} /><KV k="End" v={fmtDate(prep.content.valid_until)} /><KV k="Approver" v={prep.approver} /></div>
               <KV k="Authorization document digest" v={prep.content.authorization_doc_sha256} mono />
-              <div><div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">Endpoints</div>{prep.content.endpoints.map((e: any) => <div key={e.url} className="mb-1 rounded-lg bg-black/30 px-3 py-2 font-mono text-xs text-slate-300">{e.url} · {e.model} · {e.provider}{e.local && <span className="text-amber-300"> · LOCAL (internal network allowed)</span>}{e.ingest_url && <span> · document upload: {e.ingest_url}</span>}{e.ingest_delete_url && <span> · cleanup: {e.ingest_delete_url}</span>}{e.api_key_env && <span> · key: ${e.api_key_env}</span>}{e.request_template && <pre className="mt-2 whitespace-pre-wrap text-[11px] text-slate-400">request template: {e.request_template}{"\n"}response path: {e.response_path}</pre>}</div>)}</div>
+              <div><div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">Endpoints</div>{prep.content.endpoints.map((e: any) => <div key={e.url} className="mb-1 rounded-lg bg-black/30 px-3 py-2 font-mono text-xs text-slate-300">{e.url} · {e.model} · {e.provider}{e.local && <span className="text-amber-300"> · LOCAL (internal network allowed)</span>}{e.ingest_url && <span> · document upload: {e.ingest_url}</span>}{e.ingest_delete_url && <span> · cleanup: {e.ingest_delete_url}</span>}{e.api_key_env && <span> · key: ${e.api_key_env}</span>}{e.request_template && <pre className="mt-2 whitespace-pre-wrap text-[11px] text-slate-400">request template: {e.request_template}{"\n"}response path: {e.response_path}{e.done_path ? `\nend-of-reply field: ${e.done_path}` : ""}</pre>}{e.token_url && <span> · OAuth token URL: {e.token_url}</span>}</div>)}</div>
               <div><div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">Categories</div><div className="flex flex-wrap gap-1.5">{prep.content.attack_classes.map((a: string) => <Badge key={a} tone="violet">{[...(meta?.attack_classes || []), ...(meta?.analysis_classes || [])].find((c: any) => c.id === a)?.label || a}</Badge>)}</div>{prep.content.tool_abuse_attested && <p className="mt-1 text-xs text-amber-300">A “test environment” attestation was given for tool abuse.</p>}</div>
               <div data-testid="adaptive-grant"><div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">Adaptive mode (Attacker agent)</div>
                 {prep.adaptive?.allowed ? <p className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">ALLOWED - runs under this scope may let an Attacker LLM rewrite refused test messages, up to <b>{prep.adaptive.max_rounds}</b> round(s) per case.</p>

@@ -1,6 +1,6 @@
 {
  "mode": "mock",
- "total": 149,
+ "total": 151,
  "failed": 0,
  "results": [
   {
@@ -196,7 +196,7 @@
   {
    "name": "PDF report was generated (valid PDF, > 8 KB)",
    "ok": true,
-   "detail": "45731 bytes"
+   "detail": "45735 bytes"
   },
   {
    "name": "PDF content: risk score, finding ids and library name are present",
@@ -211,7 +211,7 @@
   {
    "name": "client report: the dialog downloads a valid PDF",
    "ok": true,
-   "detail": "pentest-report-f1d8ff0d.pdf"
+   "detail": "pentest-report-fa8a18c1.pdf"
   },
   {
    "name": "client report: cover, finding ids, steps to reproduce and remediation are present",
@@ -221,7 +221,17 @@
   {
    "name": "client report: the DOCX export is a Word document",
    "ok": true,
-   "detail": "200 41599"
+   "detail": "200 41602"
+  },
+  {
+   "name": "retest: the finding's Retest tab runs the case again and shows the outcome (still vulnerable)",
+   "ok": true,
+   "detail": "Latest retest:\nStill vulnerable\n27 Nov 2026, 23:09"
+  },
+  {
+   "name": "compare: the run page compares two runs (fixed / new / still open / not retested)",
+   "ok": true,
+   "detail": "Fixed\n0\n\nverified in the earlier run, tested again here and not found\n\nNew\n0\n\nverified here, not in the earlier run\n\nSti"
   },
   {
    "name": "scope limit: hard stop after 2 requests (REQUEST_LIMIT), the refusal was coded",
@@ -261,7 +271,7 @@
   {
    "name": "dashboard: risk score critical, 8 verified findings, token usage > 0",
    "ok": true,
-   "detail": "{\"r\":97,\"v\":8,\"t\":14062}"
+   "detail": "{\"r\":97,\"v\":8,\"t\":15435}"
   },
   {
    "name": "judge advisory: local endpoint → 'warn' level and a reason",
@@ -371,7 +381,7 @@
   {
    "name": "findings are filtered by OWASP category (LLM07) and the card carries the OWASP badge",
    "ok": true,
-   "detail": "7 kart"
+   "detail": "8 kart"
   },
   {
    "name": "API filter: the legacy 2023 id is accepted too (LLM06_SensitiveInfoDisclosure → LLM02)",
@@ -511,7 +521,7 @@
   {
    "name": "a run limited to AISVS-mapped benchmark cases started",
    "ok": true,
-   "detail": "{\"id\":\"d7591c63-0680-450b-93a3-47b4a54ffd93\",\"cases\":2,\"owasp_planned\":[\"LLM01_PromptInjection\"],\"owasp_skipped\":[]}"
+   "detail": "{\"id\":\"e9f5626a-1f70-421d-a281-6228e2f91972\",\"cases\":2,\"owasp_planned\":[\"LLM01_PromptInjection\"],\"owasp_skipped\":[]}"
   },
   {
    "name": "the run evaluated both benchmark cases",
@@ -671,7 +681,7 @@
   {
    "name": "import-payloads: 2 cases, the duplicate and the comment were skipped, family memory_poisoning",
    "ok": true,
-   "detail": "{\"id\":\"d462ba27-5607-40e3-917b-55b9abac463f\",\"name\":\"memory-poisoning_notes.txt\",\"version\":\"import-1\",\"sha256\":\"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47\",\"cases\":2,\"report\":{\"r"
+   "detail": "{\"id\":\"97dd7906-a04e-4674-b960-ef9a01f831a5\",\"name\":\"memory-poisoning_notes.txt\",\"version\":\"import-1\",\"sha256\":\"1d66d05b60c49fd49649e8d81fda5fc3719978b58d20cd0b7a6886039b757d47\",\"cases\":2,\"report\":{\"r"
   },
   {
    "name": "the imported library ran",
@@ -696,7 +706,7 @@
   {
    "name": "a branching library validates and is saved",
    "ok": true,
-   "detail": "{\"id\":\"1f9a1ae6-5f26-437d-9875-bb1d65c4255a\",\"name\":\"Payload branching\",\"version\":\"1\",\"sha256\":\"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b"
+   "detail": "{\"id\":\"2836917a-b7ab-45e3-9a99-b81759f2ff8d\",\"name\":\"Payload branching\",\"version\":\"1\",\"sha256\":\"3c2a8fc22b799325e05e8a2d2dc3084c981f86ebec21dd9d5353fe9c3039207b"
   },
   {
    "name": "branching: a scope without 'branching_allowed' refuses the run (422)",
@@ -706,7 +716,7 @@
   {
    "name": "branching: the run was accepted under the granted scope",
    "ok": true,
-   "detail": "{\"id\":\"6541ee41-ee3b-4791-b47e-7393efe7ffd5\",\"cases\":1,\"owasp_planned\":[\"LLM07_SystemPromptLeakage\"],\"owasp_skipped\":[]}"
+   "detail": "{\"id\":\"f8cfcdbe-9fe4-4177-b094-f77cb4278bf8\",\"cases\":1,\"owasp_planned\":[\"LLM07_SystemPromptLeakage\"],\"owasp_skipped\":[]}"
   },
   {
    "name": "branching: the code followed the rule (s1 → s3, s2 never sent) and the path is in the evidence",

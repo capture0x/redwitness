@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, CircleStop, Download, FileDown, FileText, ShieldAlert } from "lucide-react";
 import ClientReportDialog from "@/components/ClientReportDialog";
+import CompareRuns from "@/components/CompareRuns";
 import FindingCard, { Untrusted } from "@/components/FindingCard";
 import PageHeader, { Notice } from "@/components/PageHeader";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ export default function RunPage() {
         ))}
         {byCase.size === 0 && <p className="text-sm text-slate-500">No requests sent yet.</p>}
       </div>
+      <div className="mt-6"><CompareRuns run={r} /></div>
     </>
   );
 }
